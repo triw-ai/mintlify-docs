@@ -1,39 +1,82 @@
 ---
 title: "Hermes Agent"
-description: "Register Triw as a custom OpenAI-compatible provider in Hermes Agent."
+description: "Install Hermes Agent and add Triw as a provider in config.yaml."
 ---
 
-Hermes Agent (Nous Research) accepts custom providers. Triw becomes one entry in its config, after which any Triw model is selectable like a built-in one.
+Hermes Agent is Nous Research's terminal agent. Providers are declared in `~/.hermes/config.yaml`, either through the dashboard's Models page or by editing the file.
+
+## Requirements
+
+| Item | Note |
+| --- | --- |
+| OS | macOS, Linux, Windows |
+| Python | bundled by the installer; no manual setup needed |
+
+## Install
+
+Use the desktop installer from [hermes-agent.nousresearch.com](https://hermes-agent.nousresearch.com/docs/getting-started/installation) for macOS or Windows, or install the CLI:
+
+<CodeGroup>
+```bash Linux / macOS / WSL2
+curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+```
+```powershell Windows
+iex (irm https://hermes-agent.nousresearch.com/install.ps1)
+```
+</CodeGroup>
+
+```bash
+hermes --version
+```
+
+On an existing install, `hermes update` keeps the CLI and config schema current.
 
 ## Configure
 
-Add a provider block to the Hermes config (`config.yaml` in the Hermes profile directory):
+Add a provider entry and point the main model at it:
 
-```yaml config.yaml
-provider: custom
-custom_providers:
-  - name: triw
-    base_url: https://router.triw.io/v1
-    api_key: ${TRIW_API_KEY}
-    model: claude-sonnet-4-5
+```yaml ~/.hermes/config.yaml
+providers:
+  triw:
+    api: https://router.triw.io/v1
+    api_key: sk-...
+
+model:
+  provider: triw
+  default: claude-sonnet-4-5
+  base_url: https://router.triw.io/v1
+  api_mode: chat_completions
 ```
 
 ```bash
-export TRIW_API_KEY="sk-..."
+export TRIW_API_KEY="sk-..."   # then use api_key: ${TRIW_API_KEY} if you prefer
 ```
 
-Exact key names follow the Hermes provider schema; the values are always: base URL `https://router.triw.io/v1` and a Triw `sk-` key.
+Field notes:
+
+| Field | Meaning |
+| --- | --- |
+| `providers.<name>.api` | Base URL of the endpoint |
+| `providers.<name>.api_key` | Credential; literal or `${ENV_VAR}` |
+| `providers.<name>.extra_headers` | Optional headers added to every request |
+| `model.provider` | Provider id used for new sessions |
+| `model.api_mode` | `chat_completions` for `/v1/chat/completions` |
+
+Legacy configs used a top-level `custom_providers:` list with `base_url`; it still loads and is migrated on update.
 
 ## Verify
 
 ```bash
-hermes "reply with ok"
+hermes "reply with the single word: ready"
 ```
 
-Then check the Triw log for the request. A `401` means the environment variable did not reach Hermes — export it in the shell that launches the agent, or write the key directly in the config file.
+Then check Triw **Logs**. Inside a session, `/model` switches models and shows which provider serves them.
 
-## Notes
+## Troubleshooting
 
-- Keep `base_url` at `/v1`; the agent appends the concrete endpoint.
-- If you run multiple agents, give each its own Triw key so usage is attributable in the console.
-- Model ids with a provider prefix are not needed — send the bare id from `GET /v1/models`.
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| `401` | Key not visible to the process | Export the variable in the launching shell, or inline the key |
+| Model list empty | Provider not selected | Set `model.provider: triw` |
+| Anthropic-style stream breaks | `api_mode` wrong | Use `chat_completions` for `/v1/*` |
+| Config ignored | Editing a different profile | Confirm `~/.hermes/config.yaml` is the active profile |

@@ -1,48 +1,64 @@
 ---
 title: "DeepSeek Harness"
-description: "Menjalankan harness agent dsh terhadap endpoint kompatibel OpenAI milik Triw."
+description: "Instal dsh dan tambahkan Triw sebagai custom model API di UI harness."
 ---
 
-DeepSeek Harness (`dsh`) adalah harness agent berbasis plugin. Ia bekerja dengan provider kompatibel OpenAI mana pun, jadi Triw bisa melayaninya.
+DeepSeek Harness (`dsh`) adalah harness agent berbasis plugin milik DeepSeek dengan web UI. Provider dikonfigurasi di UI dan disimpan pada profil aktif.
+
+## Kebutuhan sistem
+
+| Item | Catatan |
+| --- | --- |
+| Node | 20+ |
+| pnpm | wajib untuk instalasi global |
+| OS | macOS, Linux, Windows (disarankan WSL) |
 
 ## Instalasi
 
 ```bash
-npm install -g @deepseek-ai/dsh
+npm install -g pnpm          # lewati bila pnpm sudah ada
+pnpm add -g @deepseek-ai/dsh
 dsh --version
+```
+
+Menjalankan:
+
+```bash
+dsh            # memuat profil default dan membuka web UI
 ```
 
 ## Konfigurasi
 
-Arahkan harness ke Triw dengan environment kompatibel OpenAI dan id model Triw:
+Di UI harness: **Settings → Models → Custom model API**.
 
-```bash
-export OPENAI_BASE_URL="https://router.triw.io/v1"
-export OPENAI_API_KEY="sk-..."
-export DSH_MODEL="claude-sonnet-4-5"
-dsh
-```
+| Field | Nilai |
+| --- | --- |
+| Provider ID | `triw` (huruf kecil, permanen setelah disimpan) |
+| Base URL | `https://router.triw.io/v1` |
+| API protocol | `OpenAI Chat Completions` |
+| Credential | key `sk-...` Triw Anda |
+| Model | satu id dari `GET /v1/models`, mis. `claude-sonnet-4-5` |
 
-Bila profil yang terpasang memakai file config, tiga nilai berikut yang dipakai — base URL, key, model:
+Protokol dipetakan ke nilai tersimpan di `cordis.patch.yml` pada profil aktif:
 
-```json
-{
-  "provider": "openai-compatible",
-  "base_url": "https://router.triw.io/v1",
-  "api_key": "sk-...",
-  "model": "claude-sonnet-4-5"
-}
-```
+| Label UI | Nilai tersimpan |
+| --- | --- |
+| OpenAI Chat Completions | `openai-completions` |
+| OpenAI Responses | `openai-responses` |
+| Anthropic Messages | `anthropic-messages` |
+| Gemini API | `google-generative-ai` |
+
+Satu provider hanya berbicara satu protokol. Triw melayani chat-completions dan Anthropic messages — bila butuh keduanya, daftarkan dua provider (`triw` dan `triw-anthropic`). Kredensial disimpan di `$DSH_HOME/.credentials.yaml`, bukan di file profil.
 
 ## Verifikasi
 
-```bash
-dsh -p "balas ready"
-```
+Mulai sesi dan kirim `balas dengan satu kata: ready`. Lalu pastikan panggilannya muncul di **Logs** Triw.
 
-Lalu cek panggilan di log Triw. Log kosong berarti profil yang aktif masih menunjuk endpoint resmi — periksa `dsh profile list` dan blok provider pada profil tersebut.
+## Troubleshooting
 
-## Catatan
-
-- Plugin harness kadang mengambil ulang daftar model saat start; bila model tidak muncul, tambahkan ke profil atau pilih model yang terdaftar di `GET /v1/models`.
-- Model non-DeepSeek bisa dipakai lewat Triw, tapi kualitas format tool call berbeda per model — uji loop agent sebelum diandalkan.
+| Gejala | Penyebab | Perbaikan |
+| --- | --- | --- |
+| `pnpm: command not found` | pnpm belum ada | `npm install -g pnpm` |
+| Provider tidak terlihat | Tersimpan di profil lain | Pindah profil, atau tambahkan ulang di profil aktif |
+| 404 | Protokol tidak cocok dengan route | Chat Completions untuk `/v1/chat/completions` |
+| 401 | Kredensial ditolak setelah URL diubah | Masukkan ulang key; kredensial bersifat write-only |

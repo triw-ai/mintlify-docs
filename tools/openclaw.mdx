@@ -1,22 +1,47 @@
 ---
 title: "OpenClaw"
-description: "Point OpenClaw at Triw as an OpenAI-compatible provider."
+description: "Install OpenClaw and register Triw under models.providers."
 ---
 
-OpenClaw ships with a provider/model layer. Any OpenAI-compatible endpoint can be registered, which covers Triw for both chat and agent workflows.
+OpenClaw is a Node-based agent gateway with its own provider catalog. Custom endpoints are declared under `models.providers`.
+
+## Requirements
+
+| Item | Minimum |
+| --- | --- |
+| Node | 24.16+ on 24.x, or 26.1+ (26 recommended) |
+| OS | macOS, Linux, Windows (WSL recommended) |
+| Network | outbound HTTPS to `router.triw.io` |
+
+## Install
+
+```bash
+curl -fsSL --proto '=https' --tlsv1.2 https://openclaw.ai/install.sh | bash
+openclaw --version
+```
+
+The installer provisions Node when the host has none. Windows: use the PowerShell installer from [docs.openclaw.ai/install](https://docs.openclaw.ai/install).
 
 ## Configure
 
-1. Install OpenClaw following [docs.openclaw.ai](https://docs.openclaw.ai/docs/setup).
-2. Add a provider entry pointing at Triw:
+Declare Triw as an OpenAI-completions provider, then point the default agent model at it:
 
-```json ~/.openclaw/config.json
+```json5 ~/.openclaw/config.json5
 {
-  "providers": {
-    "triw": {
-      "type": "openai-compatible",
-      "baseUrl": "https://router.triw.io/v1",
-      "apiKeyEnv": "TRIW_API_KEY"
+  agents: {
+    defaults: { model: { primary: "triw/claude-sonnet-4-5" } }
+  },
+  models: {
+    providers: {
+      triw: {
+        baseUrl: "https://router.triw.io/v1",
+        api: "openai-completions",
+        apiKey: "${TRIW_API_KEY}",
+        models: [
+          { id: "claude-sonnet-4-5", name: "Claude Sonnet 4.5" },
+          { id: "gpt-4o-mini", name: "GPT-4o mini" }
+        ]
+      }
     }
   }
 }
@@ -26,14 +51,26 @@ OpenClaw ships with a provider/model layer. Any OpenAI-compatible endpoint can b
 export TRIW_API_KEY="sk-..."
 ```
 
-Provider schema keys vary between OpenClaw releases — if a field is rejected, run `openclaw config validate` (or open the provider UI) and map the same three values: base URL, key, model id.
+You can also run onboarding and choose the custom-provider path:
+
+```bash
+openclaw onboard --custom-base-url https://router.triw.io/v1 --custom-model-id claude-sonnet-4-5
+```
 
 ## Verify
 
-Run a one-line prompt through OpenClaw and confirm the entry in the Triw log. If the log stays empty, OpenClaw is using its default provider — check which provider is active for the profile you launched.
+```bash
+openclaw models list          # triw entries should appear
+openclaw "reply with the single word: ready"
+```
 
-## Notes
+Then confirm the call in Triw **Logs**.
 
-- Use the `/v1` suffix, matching the OpenAI-compatible contract.
-- Agent workflows need tool-calling models; pick accordingly rather than optimizing for price.
-- Keep a dedicated Triw key per machine so revocation is surgical.
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| Provider missing | `models.providers` placed in the wrong file | Use `~/.openclaw/config.json5`, or `~/.openclaw/agents/<id>/models.json` |
+| Agent answers from another provider | `agents.defaults.model.primary` not set to `triw/...` | Set the primary model |
+| `401` | `${TRIW_API_KEY}` unresolved | Export the variable, or inline the key |
+| Tool loop stalls | Model without tool support | Use a coding model |

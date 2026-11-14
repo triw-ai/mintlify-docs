@@ -1,22 +1,47 @@
 ---
 title: "OpenClaw"
-description: "Mengarahkan OpenClaw ke Triw sebagai provider kompatibel OpenAI."
+description: "Instal OpenClaw dan daftarkan Triw di models.providers."
 ---
 
-OpenClaw punya lapisan provider/model. Endpoint apa pun yang kompatibel OpenAI bisa didaftarkan, termasuk Triw, untuk chat maupun alur agent.
+OpenClaw adalah gateway agent berbasis Node dengan katalog provider sendiri. Endpoint kustom dideklarasikan di `models.providers`.
+
+## Kebutuhan sistem
+
+| Item | Minimum |
+| --- | --- |
+| Node | 24.16+ pada seri 24.x, atau 26.1+ (disarankan 26) |
+| OS | macOS, Linux, Windows (disarankan WSL) |
+| Jaringan | HTTPS keluar ke `router.triw.io` |
+
+## Instalasi
+
+```bash
+curl -fsSL --proto '=https' --tlsv1.2 https://openclaw.ai/install.sh | bash
+openclaw --version
+```
+
+Installer menyediakan Node bila host belum punya. Windows: gunakan installer PowerShell dari [docs.openclaw.ai/install](https://docs.openclaw.ai/install).
 
 ## Konfigurasi
 
-1. Pasang OpenClaw mengikuti [docs.openclaw.ai](https://docs.openclaw.ai/docs/setup).
-2. Tambahkan entri provider yang mengarah ke Triw:
+Deklarasikan Triw sebagai provider `openai-completions`, lalu arahkan model default agent ke sana:
 
-```json ~/.openclaw/config.json
+```json5 ~/.openclaw/config.json5
 {
-  "providers": {
-    "triw": {
-      "type": "openai-compatible",
-      "baseUrl": "https://router.triw.io/v1",
-      "apiKeyEnv": "TRIW_API_KEY"
+  agents: {
+    defaults: { model: { primary: "triw/claude-sonnet-4-5" } }
+  },
+  models: {
+    providers: {
+      triw: {
+        baseUrl: "https://router.triw.io/v1",
+        api: "openai-completions",
+        apiKey: "${TRIW_API_KEY}",
+        models: [
+          { id: "claude-sonnet-4-5", name: "Claude Sonnet 4.5" },
+          { id: "gpt-4o-mini", name: "GPT-4o mini" }
+        ]
+      }
     }
   }
 }
@@ -26,14 +51,26 @@ OpenClaw punya lapisan provider/model. Endpoint apa pun yang kompatibel OpenAI b
 export TRIW_API_KEY="sk-..."
 ```
 
-Skema provider berbeda antar rilis OpenClaw — bila ada field ditolak, jalankan `openclaw config validate` atau buka UI provider, lalu petakan tiga nilai yang sama: base URL, key, id model.
+Alternatif lewat onboarding:
+
+```bash
+openclaw onboard --custom-base-url https://router.triw.io/v1 --custom-model-id claude-sonnet-4-5
+```
 
 ## Verifikasi
 
-Jalankan prompt satu baris lewat OpenClaw, lalu pastikan entri muncul di log Triw. Kalau log kosong, OpenClaw memakai provider default — cek provider mana yang aktif pada profil yang Anda jalankan.
+```bash
+openclaw models list          # entri triw harus muncul
+openclaw "balas dengan satu kata: ready"
+```
 
-## Catatan
+Lalu pastikan panggilannya muncul di **Logs** Triw.
 
-- Pakai sufiks `/v1` sesuai kontrak kompatibel OpenAI.
-- Alur agent butuh model dengan tool-calling; pilih sesuai kebutuhan, bukan semata harga.
-- Sediakan key Triw terpisah per mesin agar pencabutan tidak berdampak luas.
+## Troubleshooting
+
+| Gejala | Penyebab | Perbaikan |
+| --- | --- | --- |
+| Provider tidak muncul | `models.providers` ditaruh di file salah | Pakai `~/.openclaw/config.json5`, atau `~/.openclaw/agents/<id>/models.json` |
+| Agent menjawab dari provider lain | `agents.defaults.model.primary` belum diarahkan | Set ke `triw/...` |
+| `401` | `${TRIW_API_KEY}` tidak ter-resolve | Export variabelnya, atau tulis key langsung |
+| Loop tool berhenti | Model tanpa dukungan tool | Pakai model coding |

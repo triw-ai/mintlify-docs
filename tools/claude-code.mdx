@@ -1,26 +1,58 @@
 ---
 title: "Claude Code"
-description: "Run Anthropic's CLI against Triw with two environment variables."
+description: "Install Claude Code, point it at Triw, and pick a model."
 ---
 
-Claude Code speaks the Anthropic Messages API, which Triw implements. Point it at the gateway and it works with any `claude-*` model your key can reach — plus non-Anthropic models exposed through the same route.
+Claude Code is Anthropic's terminal agent. It speaks the Anthropic Messages API, which Triw implements, so it runs against Triw with a base URL and a token.
 
-## Set the environment
+## Requirements
+
+| Item | Minimum |
+| --- | --- |
+| OS | macOS 13+, Windows 10 (1809+), Ubuntu 20.04+, Debian 10+, Alpine 3.19+ |
+| Hardware | 4 GB RAM, x64 or ARM64 |
+| Shell | Bash, Zsh, PowerShell or CMD |
+| Network | outbound HTTPS to `router.triw.io` |
+
+## Install
+
+<CodeGroup>
+```bash macOS / Linux / WSL
+curl -fsSL https://claude.ai/install.sh | bash
+```
+```powershell Windows (PowerShell)
+irm https://claude.ai/install.ps1 | iex
+```
+```batch Windows (CMD)
+curl -fsSL https://claude.ai/install.cmd -o install.cmd && install.cmd && del install.cmd
+```
+```bash npm (any OS, Node 18+)
+npm install -g @anthropic-ai/claude-code
+```
+</CodeGroup>
+
+```bash
+claude --version     # confirm the binary is on PATH
+```
+
+## Point it at Triw
+
+Claude Code reads two variables: the endpoint and the credential.
 
 <CodeGroup>
 ```bash macOS / Linux
 export ANTHROPIC_BASE_URL="https://router.triw.io"
-export ANTHROPIC_AUTH_TOKEN="sk-..."   # Triw key
+export ANTHROPIC_AUTH_TOKEN="sk-..."      # Triw key
 claude
 ```
-```powershell Windows (PowerShell)
+```powershell Windows
 $env:ANTHROPIC_BASE_URL = "https://router.triw.io"
 $env:ANTHROPIC_AUTH_TOKEN = "sk-..."
 claude
 ```
 </CodeGroup>
 
-To make it permanent for a project, use a `.envrc`/direnv, or Claude Code's settings file:
+Persist it per user so every new shell inherits it:
 
 ```json ~/.claude/settings.json
 {
@@ -31,28 +63,38 @@ To make it permanent for a project, use a `.envrc`/direnv, or Claude Code's sett
 }
 ```
 
-## Pin a model
+The base URL is the **host only** — do not append `/v1`. Claude Code adds `/v1/messages` itself.
+
+## Choose a model
 
 ```bash
-claude --model claude-sonnet-4-5
+export ANTHROPIC_MODEL="claude-sonnet-4-5"
 ```
 
-List what your key may use first:
+List what your key may use:
 
 ```bash
 curl https://router.triw.io/v1/models -H "Authorization: Bearer $ANTHROPIC_AUTH_TOKEN"
 ```
 
+Inside a session, `/model` switches models and `/status` shows the resolved endpoint and account.
+
 ## Verify
 
-Inside Claude Code, ask a trivial question. If the reply arrives, routing is correct. If it fails:
+```bash
+claude -p "reply with the single word: ready"
+```
 
-| Symptom | Cause |
-| --- | --- |
-| `401` immediately | `ANTHROPIC_AUTH_TOKEN` empty or has quotes/whitespace |
-| `404 model_not_found` | Model not in the key's group |
-| Requests go to `api.anthropic.com` | `ANTHROPIC_BASE_URL` not exported in the shell that launched `claude` |
+Then confirm the request landed: Triw console → **Logs**. A row with your key and model means the routing works.
 
-<Note>
-`ANTHROPIC_API_KEY` takes precedence in some Claude Code versions. If traffic still goes to Anthropic, unset it and keep only `ANTHROPIC_AUTH_TOKEN`.
-</Note>
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| `401 Invalid API key` | Token empty, quoted, or trailing space | Re-export without quotes; check `echo "${ANTHROPIC_AUTH_TOKEN:0:6}"` |
+| Calls still reach `api.anthropic.com` | `ANTHROPIC_BASE_URL` not exported in that shell | Export in the same shell, or use `settings.json` |
+| `404` on every request | Base URL includes `/v1` | Use `https://router.triw.io` |
+| `model_not_found` | Model not in the key's group | Create a key in a group that includes it |
+| Login prompt appears | `ANTHROPIC_API_KEY` set in the environment | Unset it; Triw issues tokens, not Anthropic accounts |
+
+Uninstall: delete `~/.claude` plus the binary reported by `which claude` (native installer) or `npm uninstall -g @anthropic-ai/claude-code`.

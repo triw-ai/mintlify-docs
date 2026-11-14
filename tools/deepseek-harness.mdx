@@ -1,48 +1,64 @@
 ---
 title: "DeepSeek Harness"
-description: "Run the dsh agent harness against Triw's OpenAI-compatible endpoint."
+description: "Install dsh and add Triw as a custom model API in the harness UI."
 ---
 
-DeepSeek Harness (`dsh`) is a plugin-based agent harness. It works with any OpenAI-compatible provider, so Triw can serve it.
+DeepSeek Harness (`dsh`) is DeepSeek's plugin-based agent harness with a web UI. Providers are configured in the UI and stored in the active profile.
+
+## Requirements
+
+| Item | Note |
+| --- | --- |
+| Node | 20+ |
+| pnpm | required for the global install |
+| OS | macOS, Linux, Windows (WSL recommended) |
 
 ## Install
 
 ```bash
-npm install -g @deepseek-ai/dsh
+npm install -g pnpm          # skip if pnpm is already present
+pnpm add -g @deepseek-ai/dsh
 dsh --version
+```
+
+Run it:
+
+```bash
+dsh            # boots the default profile and opens the web UI
 ```
 
 ## Configure
 
-Point the harness at Triw with the OpenAI-compatible environment and a Triw model id:
+In the harness UI: **Settings → Models → Custom model API**.
 
-```bash
-export OPENAI_BASE_URL="https://router.triw.io/v1"
-export OPENAI_API_KEY="sk-..."     # Triw key
-export DSH_MODEL="claude-sonnet-4-5"
-dsh
-```
+| Field | Value |
+| --- | --- |
+| Provider ID | `triw` (lowercase, permanent once saved) |
+| Base URL | `https://router.triw.io/v1` |
+| API protocol | `OpenAI Chat Completions` |
+| Credential | your `sk-...` Triw key |
+| Model | one id from `GET /v1/models`, e.g. `claude-sonnet-4-5` |
 
-If your installed profile uses a config file instead, the same three values apply — base URL, key, model:
+The protocol maps to a stored value in the active profile's `cordis.patch.yml`:
 
-```json
-{
-  "provider": "openai-compatible",
-  "base_url": "https://router.triw.io/v1",
-  "api_key": "sk-...",
-  "model": "claude-sonnet-4-5"
-}
-```
+| UI label | Stored value |
+| --- | --- |
+| OpenAI Chat Completions | `openai-completions` |
+| OpenAI Responses | `openai-responses` |
+| Anthropic Messages | `anthropic-messages` |
+| Gemini API | `google-generative-ai` |
+
+A provider speaks one protocol. Triw serves both chat-completions and Anthropic messages — if you need both shapes, register two providers (`triw` and `triw-anthropic`). Credentials live in `$DSH_HOME/.credentials.yaml`, not in the profile file.
 
 ## Verify
 
-```bash
-dsh -p "reply with ready"
-```
+Start a session and send `reply with the single word: ready`. Then confirm the call in Triw **Logs**.
 
-Then confirm the call in the Triw log. An empty log means the profile in use is still pointing at the official endpoint — check `dsh profile list` and the active profile's provider block.
+## Troubleshooting
 
-## Notes
-
-- Harness plugins may requery models at startup; if a model is missing, add it to the profile or pick one already listed by `GET /v1/models`.
-- Non-DeepSeek models work through Triw, but tool-call formatting quality varies by model — validate the agent loop before relying on it.
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| `pnpm: command not found` | pnpm missing | `npm install -g pnpm` |
+| Provider invisible in picker | Saved under a different profile | Switch profile, or re-add under the active one |
+| 404 | Wrong protocol for the route | Chat Completions for `/v1/chat/completions` |
+| 401 | Credential rejected after URL edit | Re-enter the key; credentials are write-only |

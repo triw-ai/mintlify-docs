@@ -1,39 +1,82 @@
 ---
 title: "Hermes Agent"
-description: "Mendaftarkan Triw sebagai provider kustom kompatibel OpenAI di Hermes Agent."
+description: "Instal Hermes Agent dan tambahkan Triw sebagai provider di config.yaml."
 ---
 
-Hermes Agent (Nous Research) menerima provider kustom. Triw menjadi satu entri di config-nya, setelah itu semua model Triw bisa dipilih seperti provider bawaan.
+Hermes Agent adalah agent terminal dari Nous Research. Provider dideklarasikan di `~/.hermes/config.yaml`, baik lewat halaman Models di dashboard maupun mengedit file langsung.
+
+## Kebutuhan sistem
+
+| Item | Catatan |
+| --- | --- |
+| OS | macOS, Linux, Windows |
+| Python | disediakan installer; tidak perlu setup manual |
+
+## Instalasi
+
+Gunakan desktop installer dari [hermes-agent.nousresearch.com](https://hermes-agent.nousresearch.com/docs/getting-started/installation) untuk macOS/Windows, atau instal CLI:
+
+<CodeGroup>
+```bash Linux / macOS / WSL2
+curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+```
+```powershell Windows
+iex (irm https://hermes-agent.nousresearch.com/install.ps1)
+```
+</CodeGroup>
+
+```bash
+hermes --version
+```
+
+Pada instalasi yang sudah ada, `hermes update` menjaga CLI dan skema config tetap mutakhir.
 
 ## Konfigurasi
 
-Tambahkan blok provider ke config Hermes (`config.yaml` di direktori profil Hermes):
+Tambahkan entri provider dan arahkan model utama ke sana:
 
-```yaml config.yaml
-provider: custom
-custom_providers:
-  - name: triw
-    base_url: https://router.triw.io/v1
-    api_key: ${TRIW_API_KEY}
-    model: claude-sonnet-4-5
+```yaml ~/.hermes/config.yaml
+providers:
+  triw:
+    api: https://router.triw.io/v1
+    api_key: sk-...
+
+model:
+  provider: triw
+  default: claude-sonnet-4-5
+  base_url: https://router.triw.io/v1
+  api_mode: chat_completions
 ```
 
 ```bash
-export TRIW_API_KEY="sk-..."
+export TRIW_API_KEY="sk-..."   # lalu gunakan api_key: ${TRIW_API_KEY} bila lebih suka
 ```
 
-Nama key mengikuti skema provider Hermes; nilainya selalu: base URL `https://router.triw.io/v1` dan key `sk-` Triw.
+Arti field:
+
+| Field | Arti |
+| --- | --- |
+| `providers.<name>.api` | Base URL endpoint |
+| `providers.<name>.api_key` | Kredensial; literal atau `${ENV_VAR}` |
+| `providers.<name>.extra_headers` | Header tambahan untuk setiap request |
+| `model.provider` | Provider yang dipakai sesi baru |
+| `model.api_mode` | `chat_completions` untuk `/v1/chat/completions` |
+
+Config lama memakai daftar `custom_providers:` dengan `base_url`; masih dimuat dan dimigrasi otomatis saat update.
 
 ## Verifikasi
 
 ```bash
-hermes "balas ok"
+hermes "balas dengan satu kata: ready"
 ```
 
-Lalu cek log Triw. `401` berarti environment variable tidak sampai ke Hermes — export di shell yang menjalankan agent, atau tulis key langsung di file config.
+Lalu cek **Logs** Triw. Di dalam sesi, `/model` berpindah model dan menampilkan provider yang melayaninya.
 
-## Catatan
+## Troubleshooting
 
-- Biarkan `base_url` di `/v1`; agent menambahkan endpoint konkretnya.
-- Bila menjalankan beberapa agent, beri masing-masing key Triw sendiri agar pemakaian bisa dilacak di console.
-- Id model tidak perlu prefix provider — kirim id apa adanya dari `GET /v1/models`.
+| Gejala | Penyebab | Perbaikan |
+| --- | --- | --- |
+| `401` | Key tidak terbaca proses | Export variabel di shell peluncur, atau tulis key langsung |
+| Daftar model kosong | Provider belum dipilih | Set `model.provider: triw` |
+| Stream gaya Anthropic rusak | `api_mode` salah | Pakai `chat_completions` untuk `/v1/*` |
+| Config diabaikan | Mengedit profil berbeda | Pastikan `~/.hermes/config.yaml` adalah profil aktif |

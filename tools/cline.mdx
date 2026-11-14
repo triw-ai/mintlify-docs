@@ -1,25 +1,55 @@
 ---
 title: "Cline"
-description: "Configure Cline (VS Code) with an OpenAI-compatible provider pointing at Triw."
+description: "Install the Cline extension and connect it with an OpenAI-compatible provider."
 ---
 
-Cline ships an **OpenAI Compatible** provider type, which is exactly what Triw exposes. No proxy or gateway shim required.
+Cline is an agent inside VS Code. It ships an **OpenAI Compatible** provider type, which maps directly onto Triw.
+
+## Requirements
+
+| Item | Note |
+| --- | --- |
+| VS Code | 1.84 or newer |
+| Node | not required — the extension bundles its runtime |
+
+## Install
+
+1. Open VS Code → **Extensions** (`Cmd/Ctrl + Shift + X`).
+2. Search **Cline**, install the publisher-verified extension.
+3. Open the Cline panel from the sidebar; the API configuration screen appears on first run.
+
+Alternative: install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=saoudrizwan.claude-dev) or the Open VSX registry for VSCodium.
 
 ## Configure
 
-1. Open the Cline panel in VS Code → **Settings**.
-2. **API Provider**: `OpenAI Compatible`.
-3. **Base URL**: `https://router.triw.io/v1`
-4. **API Key**: your `sk-...` key.
-5. **Model ID**: an id from `GET /v1/models` (e.g. `claude-sonnet-4-5`, `gpt-4o-mini`).
-6. Optional: set **Context window** and **max output tokens** to the model's real limits — Cline uses these to plan tool calls.
+In the Cline panel, click the ⚙️ icon, then set:
 
-## Sanity check
+| Field | Value |
+| --- | --- |
+| API Provider | `OpenAI Compatible` |
+| Base URL | `https://router.triw.io/v1` |
+| API Key | your `sk-...` Triw key |
+| Model ID | exact id from `GET /v1/models`, e.g. `claude-sonnet-4-5` |
 
-Ask Cline to read a file in your workspace. If it answers and the Triw log shows the request, the wiring is done.
+Then open **Model Configuration** and set the real limits of that model:
 
-## Notes
+| Field | Why it matters |
+| --- | --- |
+| Context Window | Cline sizes its prompts from this; wrong values truncate or overrun |
+| Max Output Tokens | Caps per-turn output |
+| Supports Images | Enables screenshot input for vision models |
+| Supports Computer Use | Enables the browser tool loop |
+| Input / Output price | Local cost estimate in the UI only |
 
-- Cline sends tool definitions on every turn; pick a model with solid tool-calling. Cheap models often fail the agent loop rather than the HTTP call.
-- If you see `400 invalid_request_error`, the model rejected the tool schema or an unsupported parameter — try a different model before changing the config.
-- Keep a dedicated key for Cline so you can revoke it without touching backend keys.
+## Verify
+
+Ask Cline to read a file in the open workspace. If it answers and the Triw log shows the request, the wiring is correct.
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| `400 invalid_request_error` | Model rejected a tool schema or parameter | Switch model; Cline's tool payload is large |
+| Agent loops without progress | Weak tool-calling model | Use a coding model, raise max output tokens |
+| Context errors after a few turns | Context window set too high | Set the model's real window |
+| `401` | Key has quotes or a newline | Re-paste in the settings field |

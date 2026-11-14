@@ -1,30 +1,51 @@
 ---
 title: "Cursor"
-description: "Use Triw as the OpenAI endpoint inside Cursor, with custom model ids."
+description: "Install Cursor and route its OpenAI-compatible calls to Triw."
 ---
 
-Cursor allows overriding the OpenAI base URL. That single field moves every OpenAI-family request to Triw, including chat and inline edits.
+Cursor is a VS Code-derived editor with an agent. It can send OpenAI-compatible chat requests to a custom base URL, which is enough to run it on Triw.
 
-## Steps
+## Requirements
 
-1. **Settings → Models → API Keys**.
-2. Enable **OpenAI API Key** and paste your `sk-...` Triw key.
-3. Enable **Override OpenAI Base URL** and set:
+| Item | Note |
+| --- | --- |
+| OS | macOS 12+, Windows 10+, Ubuntu 20.04+ |
+| Account | Any Cursor account; a paid plan is only needed for Cursor's own hosted models |
+
+## Install
+
+1. Download from [cursor.com/downloads](https://cursor.com/downloads).
+2. Install and sign in.
+
+## Point it at Triw
+
+1. Open **Settings** (`Cmd/Ctrl + ,`) → **Models**.
+2. Under **API Keys**, enable **OpenAI API Key** and paste your `sk-...` Triw key.
+3. Enable **Override OpenAI Base URL** and enter:
 
 ```
 https://router.triw.io/v1
 ```
 
-4. **Verify** the URL, then click **Add model** and enter the exact ids from `GET /v1/models`, e.g. `gpt-4o-mini`, `claude-sonnet-4-5`.
+4. Click **Verify**. Cursor sends a test request; a green result means the key and URL are accepted.
+5. Under **Model names**, add the exact ids from `GET /v1/models` — for example `claude-sonnet-4-5`, `gpt-4o-mini`. Custom ids are not discoverable by Cursor, so they must be typed.
 
-Cursor only shows models it recognises by name; custom ids must be added manually.
+## Verify
 
-## Check the connection
+Open chat, ask a one-line question, then check **Logs** in the Triw console. A row with your key and model confirms routing.
 
-Open a chat and ask a one-line question. Then open **Dashboard → Logs** in the Triw console — the request should be logged under your key. If the log is empty, Cursor is still calling OpenAI directly (the override toggle did not apply).
+## What is not routed
 
-## Notes
+- Tab completion and Cursor's proprietary models stay on Cursor's infrastructure.
+- Only OpenAI-compatible chat/edit requests use your base URL.
 
-- Cursor's own hosted features (Tab completion, Composer's proprietary models) may not be routable; the base-URL override applies to OpenAI-compatible chat calls.
-- `model_not_found` in Cursor means the id is not in your key's group. Add a key from a wider group or use an id that is listed.
-- Keys are stored locally by Cursor in plaintext config. Use a dedicated key you can revoke.
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| `Verify` fails | Key pasted with spaces, or URL has a trailing slash | Re-paste; use `https://router.triw.io/v1` exactly |
+| Logs stay empty | Override toggle off | Re-enable **Override OpenAI Base URL** and restart Cursor |
+| `model_not_found` | Id absent from the key's group | Add the model id from `/v1/models`, or use a key from a wider group |
+| Model answers but tools fail | Model lacks function calling | Use a coding model |
+
+Cursor stores API keys in local settings in plain text. Use a dedicated Triw key so you can revoke it without touching other clients.

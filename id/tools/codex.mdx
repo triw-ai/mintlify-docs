@@ -1,14 +1,37 @@
 ---
 title: "Codex CLI"
-description: "Daftarkan Triw sebagai provider model kompatibel OpenAI di Codex."
+description: "Instal Codex CLI dan daftarkan Triw sebagai provider di config.toml."
 ---
 
-Codex membaca daftar provider dari `~/.codex/config.toml`. Triw adalah provider kompatibel OpenAI biasa, jadi cukup satu blok singkat.
+Codex adalah agent terminal dari OpenAI. Provider kustom dideklarasikan di `~/.codex/config.toml`, jadi Triw cukup satu blok provider berisi base URL dan env key.
 
-## Konfigurasi
+## Kebutuhan sistem
+
+| Item | Minimum |
+| --- | --- |
+| OS | macOS 13+, Linux, Windows (native atau WSL) |
+| Node | 20+ untuk instalasi via npm |
+| Jaringan | HTTPS keluar ke `router.triw.io` |
+
+## Instalasi
+
+<CodeGroup>
+```bash npm
+npm install -g @openai/codex
+```
+```bash Homebrew (macOS)
+brew install --cask codex
+```
+</CodeGroup>
+
+```bash
+codex --version
+```
+
+## Konfigurasi Triw
 
 ```toml ~/.codex/config.toml
-model = "gpt-5-codex"
+model = "claude-sonnet-4-5"
 model_provider = "triw"
 
 [model_providers.triw]
@@ -19,32 +42,37 @@ env_key = "TRIW_API_KEY"
 
 ```bash
 export TRIW_API_KEY="sk-..."
-codex
 ```
 
-`env_key` menentukan nama environment variable yang dibaca Codex — key tidak disimpan di file config.
+Dua hal yang menentukan:
+
+- `base_url` berakhiran `/v1`. Codex menambahkan `/chat/completions` atau `/responses`.
+- `env_key` hanya menyebut nama variabel; key tidak disimpan di file.
+
+Bila hanya ingin mengalihkan provider OpenAI bawaan, Codex juga menerima `openai_base_url = "https://router.triw.io/v1"` di level atas. Blok provider eksplisit lebih jelas bila Anda menyimpan dua provider.
 
 ## Memilih model
-
-Isi `model` dengan id yang terlihat oleh key Anda:
 
 ```bash
 curl https://router.triw.io/v1/models -H "Authorization: Bearer $TRIW_API_KEY"
 ```
 
-Id untuk kebutuhan coding biasanya dari keluarga `codex`, `gpt-5*`, atau `claude-*`, tergantung channel yang dipasang operator.
+Gunakan id persis pada `model =`. Id untuk coding umumnya dari keluarga `gpt-5*`, `codex`, atau `claude-*`, tergantung channel yang dipasang operator.
 
 ## Verifikasi
 
 ```bash
-codex --version
-codex "balas dengan kata ready saja"
+codex exec "balas dengan satu kata: ready"
 ```
 
-Harapan: satu kata. Lalu buka halaman log di console — request harus tercatat dengan key dan model yang Anda set.
+Mode interaktif: jalankan `codex`, lalu `/status` untuk memastikan provider dan model. Cocokkan dengan **Logs** di console Triw.
 
-## Jebakan umum
+## Troubleshooting
 
-- `base_url` harus berakhiran `/v1`. Codex menambahkan `/responses` atau `/chat/completions` sendiri.
-- Bila punya beberapa provider, yang memilih adalah `model_provider`; mengubah blok provider saja tidak berefek.
-- Di Windows config ada di `%USERPROFILE%\.codex\config.toml`.
+| Gejala | Penyebab | Perbaikan |
+| --- | --- | --- |
+| `401` di semua panggilan | `TRIW_API_KEY` tidak ada di shell tempat Codex jalan | Export variabelnya, atau arahkan `env_key` ke variabel yang benar |
+| `404` di semua panggilan | `base_url` tanpa `/v1` atau menyertakan path | Pakai `https://router.triw.io/v1` |
+| Provider salah dipakai | `model_provider` masih `openai` | Set ke `triw` |
+| Tool call ditolak | Model tidak mendukung function calling | Ganti ke model coding |
+| Error `wire_api` | Sebagian build meminta protokol eksplisit | Tambahkan `wire_api = "chat"` di blok provider |

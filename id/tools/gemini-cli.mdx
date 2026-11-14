@@ -1,9 +1,35 @@
 ---
 title: "Gemini CLI"
-description: "Merutekan Gemini CLI lewat Triw dengan override base URL."
+description: "Instal Gemini CLI dan alihkan ke permukaan /v1beta milik Triw."
 ---
 
-Gemini CLI secara default menghubungi `generativelanguage.googleapis.com`. Triw menyediakan permukaan `/v1beta` yang sama, jadi override base URL sudah cukup.
+Gemini CLI adalah agent terminal dari Google. Ia memanggil Gemini REST API (`/v1beta`) yang juga disediakan Triw, dan menerima override base URL.
+
+## Kebutuhan sistem
+
+| Item | Minimum |
+| --- | --- |
+| Node | 20.0.0+ |
+| OS | macOS 15+, Windows 11 24H2+, Ubuntu 20.04+ |
+| RAM | 4 GB untuk pemakaian ringan, 16 GB untuk repo besar |
+
+## Instalasi
+
+<CodeGroup>
+```bash npm
+npm install -g @google/gemini-cli
+```
+```bash Homebrew
+brew install gemini-cli
+```
+```bash npx (tanpa instalasi)
+npx @google/gemini-cli
+```
+</CodeGroup>
+
+```bash
+gemini --version
+```
 
 ## Konfigurasi
 
@@ -13,7 +39,7 @@ export GOOGLE_GEMINI_BASE_URL="https://router.triw.io"
 gemini
 ```
 
-Build terbaru juga membaca dari `~/.gemini/settings.json`:
+Atau simpan keduanya di settings pengguna:
 
 ```json ~/.gemini/settings.json
 {
@@ -22,16 +48,29 @@ Build terbaru juga membaca dari `~/.gemini/settings.json`:
 }
 ```
 
-## Verifikasi
+`settings.json` mendukung substitusi environment (`"$MY_VAR"`), sehingga key tidak perlu ditulis langsung:
+
+```json
+{ "apiKey": "$TRIW_API_KEY" }
+```
+
+## Memilih model
 
 ```bash
 gemini -m gemini-2.5-flash -p "bilang ready"
 ```
 
-Lalu pastikan request muncul di **Dashboard → Logs**. Kalau kosong, environment variable tidak terbaca oleh proses yang menjalankan `gemini` — export di shell yang sama, atau simpan di `settings.json`.
+Hanya id `gemini-*` yang relevan untuk CLI ini. Keluarga model lain diakses lewat route kompatibel OpenAI.
 
-## Catatan
+## Verifikasi
 
-- Gunakan host tanpa path. CLI menambahkan `/v1beta/models/...` sendiri.
-- Hanya id `gemini-*` yang relevan untuk CLI ini; model lain diakses lewat route kompatibel OpenAI.
-- `GOOGLE_API_KEY` bisa diprioritaskan pada sebagian versi — hapus bila trafik masih ke Google.
+Jalankan satu prompt, lalu cek **Logs** di console Triw. Log kosong berarti CLI masih memanggil Google — variabel base URL tidak sampai ke prosesnya.
+
+## Troubleshooting
+
+| Gejala | Penyebab | Perbaikan |
+| --- | --- | --- |
+| Panggilan tetap ke Google | `GOOGLE_GEMINI_BASE_URL` tidak ter-export di shell itu | Export sebelum `gemini`, atau isi `baseUrl` di settings |
+| `401` | Key tidak valid untuk Triw, atau `GOOGLE_API_KEY` menimpa | Hapus `GOOGLE_API_KEY`, sisakan key Triw |
+| `404` | Base URL menyertakan `/v1beta` | Gunakan host saja |
+| Model diabaikan | Id tidak ada di grup Anda | Cek `GET /v1/models` |

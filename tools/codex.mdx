@@ -1,14 +1,37 @@
 ---
 title: "Codex CLI"
-description: "Register Triw as an OpenAI-compatible model provider in Codex."
+description: "Install the Codex CLI and register Triw as a model provider in config.toml."
 ---
 
-Codex reads model providers from `~/.codex/config.toml`. Triw is a normal OpenAI-compatible provider, so this is a four-line block.
+Codex is OpenAI's terminal agent. Custom providers live in `~/.codex/config.toml`, so Triw is a normal provider block with a base URL and an env key.
 
-## Configure
+## Requirements
+
+| Item | Minimum |
+| --- | --- |
+| OS | macOS 13+, Linux, Windows (native or WSL) |
+| Node | 20+ for the npm install |
+| Network | outbound HTTPS to `router.triw.io` |
+
+## Install
+
+<CodeGroup>
+```bash npm
+npm install -g @openai/codex
+```
+```bash Homebrew (macOS)
+brew install --cask codex
+```
+</CodeGroup>
+
+```bash
+codex --version
+```
+
+## Configure Triw
 
 ```toml ~/.codex/config.toml
-model = "gpt-5-codex"
+model = "claude-sonnet-4-5"
 model_provider = "triw"
 
 [model_providers.triw]
@@ -19,32 +42,37 @@ env_key = "TRIW_API_KEY"
 
 ```bash
 export TRIW_API_KEY="sk-..."
-codex
 ```
 
-`env_key` names the environment variable Codex reads at runtime — the key never lands in the config file.
+Two details matter:
 
-## Choosing a model
+- `base_url` ends with `/v1`. Codex appends `/chat/completions` or `/responses`.
+- `env_key` names the environment variable; the key itself never lives in the file.
 
-Set `model` to an id your key can see:
+If you only need to redirect the built-in OpenAI provider (no second provider id), Codex also accepts `openai_base_url = "https://router.triw.io/v1"` at the top level. The explicit provider block above is clearer when you keep both.
+
+## Pick a model
 
 ```bash
 curl https://router.triw.io/v1/models -H "Authorization: Bearer $TRIW_API_KEY"
 ```
 
-Coding-oriented ids are usually the `codex`, `gpt-5*` or `claude-*` families, depending on what the operator has connected.
+Use the exact id in `model =`. Coding ids usually come from the `gpt-5*`, `codex`, or `claude-*` families, depending on what the operator connected.
 
 ## Verify
 
 ```bash
-codex --version
-codex "reply with the word ready and nothing else"
+codex exec "reply with the single word: ready"
 ```
 
-Expected: a single word. Then check the console log page — the request should appear with your key and the model you set.
+Interactive mode: `codex`, then `/status` to confirm provider and model. Cross-check with **Logs** in the Triw console.
 
-## Gotchas
+## Troubleshooting
 
-- `base_url` must end in `/v1`. Codex appends `/responses` or `/chat/completions` itself.
-- If you keep multiple providers, remember `model_provider` is what selects one; editing the block alone changes nothing.
-- On Windows, config lives at `%USERPROFILE%\.codex\config.toml`.
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| `401` on every call | `TRIW_API_KEY` unset in the shell Codex runs in | Export it, or point `env_key` at a variable you do set |
+| `404` on every call | `base_url` missing `/v1` or including a path | Use `https://router.triw.io/v1` |
+| Wrong provider used | `model_provider` still set to `openai` | Set it to `triw` |
+| Tool calls rejected | Model lacks tool-calling support | Switch to a coding model |
+| `wire_api` errors | Some builds expect an explicit protocol | Add `wire_api = "chat"` inside the provider block |

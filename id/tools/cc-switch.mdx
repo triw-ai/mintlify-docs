@@ -1,38 +1,53 @@
 ---
 title: "CC Switch"
-description: "Mengelola Triw sebagai profil provider untuk Claude Code, Codex, dan CLI lain."
+description: "Kelola Triw sebagai profil provider untuk Claude Code, Codex, OpenCode, dan dsh."
 ---
 
-CC Switch adalah pengelola provider berbasis desktop: definisikan provider sekali, lalu tukar konfigurasi aktif untuk tiap CLI yang dikelolanya (Claude Code, Codex, OpenCode, DeepSeek Harness, dan lainnya).
+CC Switch adalah aplikasi desktop yang menyimpan profil provider dan menuliskannya ke config masing-masing CLI. Satu profil Triw bisa dipakai beberapa tool.
+
+## Kebutuhan sistem
+
+| Item | Minimum |
+| --- | --- |
+| Windows | 10+ |
+| macOS | 12 (Monterey)+ |
+| Linux | glibc 2.35+ (Ubuntu 22.04+) dengan WebKitGTK 4.1 |
+
+## Instalasi
+
+Unduh dari [ccswitch.io/download](https://ccswitch.io/en/download) atau [GitHub releases](https://github.com/farion1231/cc-switch/releases). Pasang paket sesuai OS; tidak perlu langkah terminal.
 
 ## Menambahkan Triw
 
-1. Buka CC Switch → pilih tool yang dikelola (mis. **Claude Code**).
-2. **Add Provider**.
+1. Buka CC Switch dan pilih tool di sidebar kiri (Claude Code, Codex, OpenCode, DeepSeek Harness, dll).
+2. Klik **+ Add Provider**, pilih tipe **Custom / Third-party**.
 3. Isi:
 
 | Field | Nilai |
 | --- | --- |
 | Name | `Triw` |
-| Base URL | `https://router.triw.io` untuk tool gaya Anthropic, `https://router.triw.io/v1` untuk gaya OpenAI |
-| API Key | key `sk-...` Anda |
-| Model | id dari `GET /v1/models` |
+| Base URL | lihat tabel di bawah |
+| API Key | key `sk-...` Triw Anda |
+| Model | id persis dari `GET /v1/models` |
 
-4. Simpan, lalu **aktifkan** provider untuk tool tersebut.
-
-CC Switch menulis config milik CLI-nya sendiri, jadi CLI tetap jalan tanpa aplikasi terbuka.
+4. Simpan, lalu aktifkan profil dengan kontrol switch untuk tool tersebut.
 
 ## Base URL per tool
 
 | Tool | Protokol | Base URL |
 | --- | --- | --- |
-| Claude Code | Anthropic | `https://router.triw.io` |
-| Codex | OpenAI | `https://router.triw.io/v1` |
-| OpenCode | OpenAI | `https://router.triw.io/v1` |
-| DeepSeek Harness | OpenAI | `https://router.triw.io/v1` |
+| Claude Code | Anthropic Messages | `https://router.triw.io` |
+| Codex | OpenAI Chat/Responses | `https://router.triw.io/v1` |
+| OpenCode | OpenAI Chat | `https://router.triw.io/v1` |
+| DeepSeek Harness | OpenAI Chat | `https://router.triw.io/v1` |
 
-Salah di sini menghasilkan `404` pada setiap panggilan karena path menjadi ganda.
+CC Switch menulis config CLI-nya, jadi tool tetap berjalan walau aplikasi ditutup. Kembali ke provider lain cukup satu klik.
 
 ## Verifikasi
 
-Jalankan CLI dari terminal, ajukan satu pertanyaan pendek, lalu periksa log Triw. Kembali ke provider sebelumnya hanya satu klik bila ada masalah.
+Jalankan CLI, ajukan satu pertanyaan pendek, lalu cek **Logs** Triw. Jika CLI melaporkan 404 atau flag tidak dikenal, bentuk base URL untuk tool itu salah — tool Anthropic memakai host, tool OpenAI memakai `/v1`.
+
+## Catatan
+
+- Satu entri provider per protokol: simpan profil `Triw` (host) dan `Triw v1` (dengan `/v1`) bila memakai tool dari dua keluarga.
+- Profil menyimpan key secara lokal; gunakan key Triw terpisah per tool agar pencabutan tidak berdampak luas.

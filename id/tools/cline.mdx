@@ -1,25 +1,55 @@
 ---
 title: "Cline"
-description: "Menyiapkan Cline (VS Code) dengan provider kompatibel OpenAI yang mengarah ke Triw."
+description: "Instal ekstensi Cline dan sambungkan lewat provider kompatibel OpenAI."
 ---
 
-Cline menyediakan tipe provider **OpenAI Compatible**, yang persis seperti yang diekspos Triw. Tidak perlu proxy tambahan.
+Cline adalah agent di dalam VS Code. Ia menyediakan tipe provider **OpenAI Compatible**, yang langsung cocok dengan Triw.
+
+## Kebutuhan sistem
+
+| Item | Catatan |
+| --- | --- |
+| VS Code | 1.84 atau lebih baru |
+| Node | tidak perlu — runtime sudah dibundel ekstensi |
+
+## Instalasi
+
+1. Buka VS Code → **Extensions** (`Cmd/Ctrl + Shift + X`).
+2. Cari **Cline**, instal ekstensi dari publisher terverifikasi.
+3. Buka panel Cline di sidebar; layar konfigurasi API muncul pada pemakaian pertama.
+
+Alternatif: pasang dari [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=saoudrizwan.claude-dev) atau registry Open VSX untuk VSCodium.
 
 ## Konfigurasi
 
-1. Buka panel Cline di VS Code → **Settings**.
-2. **API Provider**: `OpenAI Compatible`.
-3. **Base URL**: `https://router.triw.io/v1`
-4. **API Key**: key `sk-...` Anda.
-5. **Model ID**: id dari `GET /v1/models` (mis. `claude-sonnet-4-5`, `gpt-4o-mini`).
-6. Opsional: isi **Context window** dan **max output tokens** sesuai batas model — Cline memakainya untuk merencanakan tool call.
+Di panel Cline, klik ikon ⚙️ lalu isi:
 
-## Uji cepat
+| Field | Nilai |
+| --- | --- |
+| API Provider | `OpenAI Compatible` |
+| Base URL | `https://router.triw.io/v1` |
+| API Key | key `sk-...` Triw Anda |
+| Model ID | id persis dari `GET /v1/models`, mis. `claude-sonnet-4-5` |
 
-Minta Cline membaca satu file di workspace. Kalau dia menjawab dan log Triw mencatat request-nya, koneksi sudah benar.
+Lalu buka **Model Configuration** dan isi batas nyata model tersebut:
 
-## Catatan
+| Field | Kenapa penting |
+| --- | --- |
+| Context Window | Cline menyusun prompt berdasarkan angka ini; nilai salah membuat prompt terpotong atau melebihi batas |
+| Max Output Tokens | Membatasi output per turn |
+| Supports Images | Mengaktifkan input screenshot untuk model vision |
+| Supports Computer Use | Mengaktifkan loop tool browser |
+| Input / Output price | Hanya untuk estimasi biaya di UI |
 
-- Cline mengirim definisi tool setiap turn; pilih model dengan tool-calling yang solid. Model murah sering gagal di loop agent, bukan di HTTP-nya.
-- Kalau muncul `400 invalid_request_error`, model menolak skema tool atau parameter yang tidak didukung — coba model lain sebelum mengubah config.
-- Sediakan key khusus untuk Cline agar bisa dicabut tanpa mengganggu key backend.
+## Verifikasi
+
+Minta Cline membaca satu file di workspace. Kalau ia menjawab dan log Triw mencatat request-nya, koneksi sudah benar.
+
+## Troubleshooting
+
+| Gejala | Penyebab | Perbaikan |
+| --- | --- | --- |
+| `400 invalid_request_error` | Model menolak skema tool atau parameter | Ganti model; payload tool Cline besar |
+| Agent berputar tanpa progres | Model lemah di tool-calling | Pakai model coding, naikkan max output tokens |
+| Error konteks setelah beberapa turn | Context window diset terlalu tinggi | Isi sesuai batas model |
+| `401` | Key terapit kutip atau newline | Tempel ulang di field settings |

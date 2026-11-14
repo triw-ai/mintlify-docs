@@ -1,30 +1,51 @@
 ---
 title: "Cursor"
-description: "Memakai Triw sebagai endpoint OpenAI di dalam Cursor, dengan id model kustom."
+description: "Instal Cursor dan alihkan panggilan kompatibel OpenAI ke Triw."
 ---
 
-Cursor mengizinkan override base URL OpenAI. Satu field itu memindahkan seluruh request keluarga OpenAI ke Triw, termasuk chat dan inline edit.
+Cursor adalah editor turunan VS Code dengan agent. Ia bisa mengirim request chat kompatibel OpenAI ke base URL kustom, cukup untuk menjalankannya di Triw.
 
-## Langkah
+## Kebutuhan sistem
 
-1. **Settings → Models → API Keys**.
-2. Aktifkan **OpenAI API Key**, tempel key `sk-...` Triw Anda.
+| Item | Catatan |
+| --- | --- |
+| OS | macOS 12+, Windows 10+, Ubuntu 20.04+ |
+| Akun | Akun Cursor apa pun; paket berbayar hanya perlu untuk model hosted Cursor |
+
+## Instalasi
+
+1. Unduh dari [cursor.com/downloads](https://cursor.com/downloads).
+2. Instal, lalu login.
+
+## Arahkan ke Triw
+
+1. Buka **Settings** (`Cmd/Ctrl + ,`) → **Models**.
+2. Di bagian **API Keys**, aktifkan **OpenAI API Key** dan tempel key `sk-...` Triw.
 3. Aktifkan **Override OpenAI Base URL**, isi:
 
 ```
 https://router.triw.io/v1
 ```
 
-4. Klik **Verify**, lalu **Add model** dan masukkan id persis dari `GET /v1/models`, misalnya `gpt-4o-mini`, `claude-sonnet-4-5`.
+4. Klik **Verify**. Cursor mengirim request uji; hasil hijau berarti key dan URL diterima.
+5. Di **Model names**, tambahkan id persis dari `GET /v1/models` — misalnya `claude-sonnet-4-5`, `gpt-4o-mini`. Id kustom tidak otomatis terdeteksi, jadi harus diketik.
 
-Cursor hanya menampilkan model yang dikenali namanya; id kustom harus ditambahkan manual.
+## Verifikasi
 
-## Cek koneksi
+Buka chat, ajukan satu pertanyaan pendek, lalu cek **Logs** di console Triw. Baris dengan key dan model Anda menandakan routing berhasil.
 
-Buka chat, ajukan satu pertanyaan singkat. Lalu buka **Dashboard → Logs** di console Triw — request harus tercatat pada key Anda. Kalau log kosong, Cursor masih memanggil OpenAI langsung (toggle override belum aktif).
+## Yang tidak ikut dirutekan
 
-## Catatan
+- Tab completion dan model proprietary Cursor tetap di infrastruktur Cursor.
+- Hanya request chat/edit kompatibel OpenAI yang memakai base URL Anda.
 
-- Fitur hosted Cursor (Tab completion, model proprietary Composer) belum tentu bisa dirutekan; override base URL berlaku untuk panggilan chat kompatibel OpenAI.
-- `model_not_found` di Cursor berarti id tersebut tidak ada di grup key Anda. Pakai key dari grup yang lebih luas atau ganti ke id yang terdaftar.
-- Cursor menyimpan key secara lokal dalam config teks biasa. Gunakan key khusus yang mudah dicabut.
+## Troubleshooting
+
+| Gejala | Penyebab | Perbaikan |
+| --- | --- | --- |
+| `Verify` gagal | Key terapit spasi, atau URL berakhiran garis miring | Tempel ulang; gunakan `https://router.triw.io/v1` persis |
+| Log kosong | Toggle override tidak aktif | Aktifkan lagi **Override OpenAI Base URL**, restart Cursor |
+| `model_not_found` | Id tidak ada di grup key | Tambahkan id dari `/v1/models`, atau pakai key dari grup lebih luas |
+| Model menjawab tapi tool gagal | Model tanpa function calling | Pakai model coding |
+
+Cursor menyimpan API key di settings lokal dalam teks biasa. Pakai key khusus Triw agar bisa dicabut tanpa mengganggu klien lain.

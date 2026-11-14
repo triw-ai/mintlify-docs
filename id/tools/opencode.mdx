@@ -1,22 +1,49 @@
 ---
 title: "OpenCode"
-description: "Menambahkan Triw sebagai provider kompatibel OpenAI di opencode.json."
+description: "Instal OpenCode dan deklarasikan Triw sebagai provider kustom."
 ---
 
-OpenCode membaca provider dari `opencode.json` (per proyek) atau `~/.config/opencode/opencode.json` (global). Daftarkan Triw sekali, lalu pilih model per sesi.
+OpenCode adalah agent terminal dengan sistem provider berbasis config. Endpoint apa pun yang kompatibel OpenAI bisa dideklarasikan di `opencode.json` / `opencode.jsonc`.
+
+## Kebutuhan sistem
+
+| Item | Catatan |
+| --- | --- |
+| OS | macOS, Linux, Windows (disarankan WSL) |
+| Node | 20+ bila instalasi lewat npm |
+
+## Instalasi
+
+<CodeGroup>
+```bash skrip installer
+curl -fsSL https://opencode.ai/install | bash
+```
+```bash npm
+npm install -g opencode-ai
+```
+```bash Homebrew
+brew install sst/tap/opencode
+```
+</CodeGroup>
+
+```bash
+opencode --version
+```
 
 ## Konfigurasi
 
-```json ~/.config/opencode/opencode.json
+Config berada di `~/.config/opencode/opencode.jsonc` (global) atau `./opencode.json` (per proyek). Skema terbaru memakai objek `providers`:
+
+```jsonc ~/.config/opencode/opencode.jsonc
 {
   "$schema": "https://opencode.ai/config.json",
-  "provider": {
+  "providers": {
     "triw": {
-      "npm": "@ai-sdk/openai-compatible",
       "name": "Triw",
-      "options": {
-        "baseURL": "https://router.triw.io/v1",
-        "apiKey": "{env:TRIW_API_KEY}"
+      "env": ["TRIW_API_KEY"],
+      "package": "@opencode/ai/providers/openai-compatible",
+      "settings": {
+        "baseURL": "https://router.triw.io/v1"
       },
       "models": {
         "claude-sonnet-4-5": { "name": "Claude Sonnet 4.5" },
@@ -29,24 +56,34 @@ OpenCode membaca provider dari `opencode.json` (per proyek) atau `~/.config/open
 
 ```bash
 export TRIW_API_KEY="sk-..."
-opencode
 ```
 
-`{env:TRIW_API_KEY}` menjaga secret tetap di luar file. Key literal juga bisa, tapi mudah bocor ke repo.
+| Field | Fungsi |
+| --- | --- |
+| `env` | Daftar env var yang boleh menyimpan kredensial |
+| `package` | Paket runtime untuk endpoint kompatibel OpenAI |
+| `settings.baseURL` | Endpoint Triw |
+| `models` | Id model yang ingin muncul di picker |
 
 ## Memilih model
+
+Model dialamatkan sebagai `<provider>/<model>`:
 
 ```bash
 opencode --model triw/claude-sonnet-4-5
 ```
 
-Atau pilih lewat pengalih model (`/models` di TUI).
+Di dalam TUI, `/models` menampilkan yang Anda deklarasikan; `/connect` untuk provider katalog bawaan.
 
 ## Verifikasi
 
-Minta sesuatu yang harus memanggil tool, mis. "list file di direktori ini". Jawaban teks tanpa tool pada model yang mendukung tool berarti masalah model, bukan config — panggilan HTTP-nya sudah berhasil.
+Minta sesuatu yang memerlukan tool call ("list file di direktori ini"), lalu pastikan entrinya muncul di **Logs** Triw.
 
-## Catatan
+## Troubleshooting
 
-- Hanya model di `provider.triw.models` yang muncul di picker; tambahkan yang benar-benar Anda pakai.
-- Nama paket npm penting: `@ai-sdk/openai-compatible` untuk endpoint kompatibel OpenAI generik.
+| Gejala | Penyebab | Perbaikan |
+| --- | --- | --- |
+| Provider tidak ada di picker | Kunci salah: `provider` bukan `providers` | Pakai objek `providers` |
+| `Cannot find module` | Nilai `package` salah | Gunakan `@opencode/ai/providers/openai-compatible` |
+| Id model ditolak | Id belum dideklarasikan di `models` | Tambahkan, atau salin id persis dari `/v1/models` |
+| 404 di semua panggilan | `baseURL` tanpa `/v1` | `https://router.triw.io/v1` |

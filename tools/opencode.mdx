@@ -1,22 +1,49 @@
 ---
 title: "OpenCode"
-description: "Add Triw as an OpenAI-compatible provider in opencode.json."
+description: "Install OpenCode and declare Triw as a custom provider."
 ---
 
-OpenCode reads providers from `opencode.json` (project) or `~/.config/opencode/opencode.json` (global). Register Triw once, then select models per session.
+OpenCode is a terminal agent with a config-driven provider system. Anything OpenAI-compatible can be declared in `opencode.json` / `opencode.jsonc`.
+
+## Requirements
+
+| Item | Note |
+| --- | --- |
+| OS | macOS, Linux, Windows (WSL recommended) |
+| Node | 20+ if installed through npm |
+
+## Install
+
+<CodeGroup>
+```bash install script
+curl -fsSL https://opencode.ai/install | bash
+```
+```bash npm
+npm install -g opencode-ai
+```
+```bash Homebrew
+brew install sst/tap/opencode
+```
+</CodeGroup>
+
+```bash
+opencode --version
+```
 
 ## Configure
 
-```json ~/.config/opencode/opencode.json
+Config lives at `~/.config/opencode/opencode.jsonc` (global) or `./opencode.json` (project). Current schema uses a `providers` object:
+
+```jsonc ~/.config/opencode/opencode.jsonc
 {
   "$schema": "https://opencode.ai/config.json",
-  "provider": {
+  "providers": {
     "triw": {
-      "npm": "@ai-sdk/openai-compatible",
       "name": "Triw",
-      "options": {
-        "baseURL": "https://router.triw.io/v1",
-        "apiKey": "{env:TRIW_API_KEY}"
+      "env": ["TRIW_API_KEY"],
+      "package": "@opencode/ai/providers/openai-compatible",
+      "settings": {
+        "baseURL": "https://router.triw.io/v1"
       },
       "models": {
         "claude-sonnet-4-5": { "name": "Claude Sonnet 4.5" },
@@ -29,24 +56,34 @@ OpenCode reads providers from `opencode.json` (project) or `~/.config/opencode/o
 
 ```bash
 export TRIW_API_KEY="sk-..."
-opencode
 ```
 
-`{env:TRIW_API_KEY}` keeps the secret out of the file. Literal keys also work but are easy to leak into a repo.
+| Field | Purpose |
+| --- | --- |
+| `env` | Ordered env vars that may hold the credential |
+| `package` | Runtime provider package for an OpenAI-compatible endpoint |
+| `settings.baseURL` | The Triw endpoint |
+| `models` | Model ids you want in the picker |
 
-## Selecting a model
+## Select a model
+
+Models are addressed as `<provider>/<model>`:
 
 ```bash
 opencode --model triw/claude-sonnet-4-5
 ```
 
-Or pick it interactively with the model switcher (`/models` inside the TUI).
+Inside the TUI, `/models` lists what you declared; `/connect` is for catalog providers.
 
 ## Verify
 
-Run a prompt that must call a tool, e.g. "list files in this directory". A text-only answer on a model without tool support is a model problem, not a config problem — the HTTP call already succeeded.
+Ask for something that requires a tool call ("list files in this directory"). Then confirm the entry in Triw **Logs**.
 
-## Notes
+## Troubleshooting
 
-- Only models listed under `provider.triw.models` appear in the picker; add the ones you actually use.
-- The npm package name matters: `@ai-sdk/openai-compatible` is the correct one for a generic OpenAI-compatible endpoint.
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| Provider missing from picker | Wrong key: `provider` instead of `providers` | Use the `providers` object |
+| `Cannot find module` | Wrong `package` value | Use `@opencode/ai/providers/openai-compatible` |
+| Model id rejected | Id not declared under `models` | Add it, or copy the exact id from `/v1/models` |
+| 404 on every call | `baseURL` without `/v1` | `https://router.triw.io/v1` |
