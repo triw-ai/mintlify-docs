@@ -1,0 +1,43 @@
+---
+title: "Models and groups"
+description: "Discover what your key can call, and why the same model name can behave differently across groups."
+---
+
+Model names are passed through to the upstream provider, so use the provider's identifier: `gpt-4o-mini`, `claude-sonnet-4-5`, `gemini-2.5-flash`, `dall-e-3`, and so on.
+
+## Discover what you can call
+
+```bash
+curl https://router.triw.io/v1/models \
+  -H "Authorization: Bearer $TRIW_API_KEY"
+```
+
+The response is a standard OpenAI model list, filtered to the models your key's group may use. Treat this endpoint as authoritative — it reflects live availability, not a static page.
+
+## Groups in one paragraph
+
+A group is the operator-defined profile that decides *which upstream channels* a key may use and *what it pays*. A model that exists globally but not in your group returns:
+
+```json
+{"error":{"message":"model not found","type":"new_api_error","code":"model_not_found"}}
+```
+
+Fix: create a key in a group that includes the model, then re-check `/v1/models` with that key.
+
+## Model families Triw relays
+
+| Category | Typical identifiers | Endpoint |
+| --- | --- | --- |
+| Chat / reasoning | `gpt-*`, `claude-*`, `gemini-*`, `deepseek-*`, `qwen-*` | `/v1/chat/completions`, `/v1/messages`, `/v1beta/...` |
+| Embeddings | `text-embedding-*`, `embedding-*` | `/v1/embeddings` |
+| Image generation | `dall-e-3`, `dall-e-2`, `gpt-image-*`, `flux-*` | `/v1/images/generations` |
+| Audio | `whisper-1`, `tts-1` and provider equivalents | `/v1/audio/*` |
+| Rerank | `rerank-*` | `/v1/rerank` |
+
+Which identifiers actually resolve depends on the channels the operator has connected. `/v1/models` is the answer for your key.
+
+## Choosing a model name
+
+- Use the exact string from `/v1/models`. Typos surface as `model_not_found`, not as a silent fallback.
+- For OpenAI-compatible clients, model names with provider prefixes are not needed — send the bare identifier.
+- For Anthropic clients, send `claude-*` ids; Triw translates the request to whichever channel serves that id.

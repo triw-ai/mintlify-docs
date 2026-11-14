@@ -1,0 +1,38 @@
+---
+title: "CC Switch"
+description: "Manage Triw as a provider profile for Claude Code, Codex and other CLIs."
+---
+
+CC Switch is a desktop provider manager: you define a provider once, then switch the active configuration for each CLI it manages (Claude Code, Codex, OpenCode, DeepSeek Harness, and others).
+
+## Add Triw as a provider
+
+1. Open CC Switch → select the tool you manage (e.g. **Claude Code**).
+2. **Add Provider**.
+3. Fill in:
+
+| Field | Value |
+| --- | --- |
+| Name | `Triw` |
+| Base URL | `https://router.triw.io` for Anthropic-style tools, `https://router.triw.io/v1` for OpenAI-style tools |
+| API Key | your `sk-...` key |
+| Model | an id from `GET /v1/models` |
+
+4. Save, then **activate** the provider for that tool.
+
+CC Switch writes the CLI's own config file, so the CLI keeps working without the app running.
+
+## Which base URL for which tool
+
+| Tool | Protocol | Base URL |
+| --- | --- | --- |
+| Claude Code | Anthropic | `https://router.triw.io` |
+| Codex | OpenAI | `https://router.triw.io/v1` |
+| OpenCode | OpenAI | `https://router.triw.io/v1` |
+| DeepSeek Harness | OpenAI | `https://router.triw.io/v1` |
+
+Getting this wrong produces `404` on every call — the path gets doubled.
+
+## Verify
+
+Launch the CLI from a terminal and ask a one-line question, then check the Triw log. Switching back to a previous provider is a single click if something misbehaves.

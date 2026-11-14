@@ -1,0 +1,50 @@
+---
+title: "Ringkasan"
+description: "Satu API key untuk model OpenAI, Anthropic, Gemini, image, dan audio."
+---
+
+Triw adalah AI gateway. Anda memanggil satu endpoint dengan satu key, lalu Triw meneruskan request ke provider yang melayani model tersebut. Billing, kuota, key, dan usage semuanya ada di satu console.
+
+```bash Base URL
+https://router.triw.io
+```
+
+## Yang Anda dapat
+
+<CardGroup cols={2}>
+  <Card title="API kompatibel OpenAI" icon="bolt" href="/id/sdks/openai">
+    `POST /v1/chat/completions`, `/v1/embeddings`, `/v1/responses`, `/v1/images/generations`, endpoint audio.
+  </Card>
+  <Card title="API kompatibel Anthropic" icon="messages" href="/id/sdks/anthropic">
+    `POST /v1/messages` dan `/v1/messages/count_tokens`. Claude Code dan Anthropic SDK bisa langsung diarahkan ke Triw.
+  </Card>
+  <Card title="API kompatibel Gemini" icon="gem" href="/id/sdks/gemini">
+    `POST /v1beta/models/{model}:generateContent`, plus route gaya OpenAI di `/v1beta/openai/models`.
+  </Card>
+  <Card title="Satu tagihan" icon="wallet" href="/id/billing">
+    Semua model dihitung dalam unit kuota yang sama, apa pun provider-nya.
+  </Card>
+</CardGroup>
+
+## Alur satu request
+
+1. Request dikirim ke `https://router.triw.io` dengan API key (`Authorization: Bearer sk-...`).
+2. Triw memetakan nama model ke channel upstream yang tersedia untuk grup key Anda.
+3. Response upstream diteruskan balik dalam format yang sama seperti yang Anda kirim.
+4. Pemakaian dicatat sebagai pemotongan saldo.
+
+Yang berubah antar provider hanya nilai `model` — prompt dan parsing response tetap sama.
+
+## Request pertama
+
+```bash
+curl https://router.triw.io/v1/chat/completions \
+  -H "Authorization: Bearer $TRIW_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o-mini",
+    "messages": [{"role": "user", "content": "Sapa saya dalam satu kalimat."}]
+  }'
+```
+
+Baru pertama kali? Baca [quickstart](/id/quickstart) — sekitar lima menit dari daftar akun sampai token pertama keluar.

@@ -1,0 +1,50 @@
+---
+title: "Codex CLI"
+description: "Daftarkan Triw sebagai provider model kompatibel OpenAI di Codex."
+---
+
+Codex membaca daftar provider dari `~/.codex/config.toml`. Triw adalah provider kompatibel OpenAI biasa, jadi cukup satu blok singkat.
+
+## Konfigurasi
+
+```toml ~/.codex/config.toml
+model = "gpt-5-codex"
+model_provider = "triw"
+
+[model_providers.triw]
+name = "Triw"
+base_url = "https://router.triw.io/v1"
+env_key = "TRIW_API_KEY"
+```
+
+```bash
+export TRIW_API_KEY="sk-..."
+codex
+```
+
+`env_key` menentukan nama environment variable yang dibaca Codex — key tidak disimpan di file config.
+
+## Memilih model
+
+Isi `model` dengan id yang terlihat oleh key Anda:
+
+```bash
+curl https://router.triw.io/v1/models -H "Authorization: Bearer $TRIW_API_KEY"
+```
+
+Id untuk kebutuhan coding biasanya dari keluarga `codex`, `gpt-5*`, atau `claude-*`, tergantung channel yang dipasang operator.
+
+## Verifikasi
+
+```bash
+codex --version
+codex "balas dengan kata ready saja"
+```
+
+Harapan: satu kata. Lalu buka halaman log di console — request harus tercatat dengan key dan model yang Anda set.
+
+## Jebakan umum
+
+- `base_url` harus berakhiran `/v1`. Codex menambahkan `/responses` atau `/chat/completions` sendiri.
+- Bila punya beberapa provider, yang memilih adalah `model_provider`; mengubah blok provider saja tidak berefek.
+- Di Windows config ada di `%USERPROFILE%\.codex\config.toml`.

@@ -1,0 +1,48 @@
+---
+title: "DeepSeek Harness"
+description: "Menjalankan harness agent dsh terhadap endpoint kompatibel OpenAI milik Triw."
+---
+
+DeepSeek Harness (`dsh`) adalah harness agent berbasis plugin. Ia bekerja dengan provider kompatibel OpenAI mana pun, jadi Triw bisa melayaninya.
+
+## Instalasi
+
+```bash
+npm install -g @deepseek-ai/dsh
+dsh --version
+```
+
+## Konfigurasi
+
+Arahkan harness ke Triw dengan environment kompatibel OpenAI dan id model Triw:
+
+```bash
+export OPENAI_BASE_URL="https://router.triw.io/v1"
+export OPENAI_API_KEY="sk-..."
+export DSH_MODEL="claude-sonnet-4-5"
+dsh
+```
+
+Bila profil yang terpasang memakai file config, tiga nilai berikut yang dipakai — base URL, key, model:
+
+```json
+{
+  "provider": "openai-compatible",
+  "base_url": "https://router.triw.io/v1",
+  "api_key": "sk-...",
+  "model": "claude-sonnet-4-5"
+}
+```
+
+## Verifikasi
+
+```bash
+dsh -p "balas ready"
+```
+
+Lalu cek panggilan di log Triw. Log kosong berarti profil yang aktif masih menunjuk endpoint resmi — periksa `dsh profile list` dan blok provider pada profil tersebut.
+
+## Catatan
+
+- Plugin harness kadang mengambil ulang daftar model saat start; bila model tidak muncul, tambahkan ke profil atau pilih model yang terdaftar di `GET /v1/models`.
+- Model non-DeepSeek bisa dipakai lewat Triw, tapi kualitas format tool call berbeda per model — uji loop agent sebelum diandalkan.

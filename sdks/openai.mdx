@@ -1,0 +1,80 @@
+---
+title: "OpenAI SDK"
+description: "Point the official OpenAI SDK at Triw — two fields change, nothing else."
+---
+
+Any client that speaks the OpenAI wire format works unchanged against Triw: `openai` (Python, Node, Go, .NET), LangChain, LlamaIndex, Vercel AI SDK, and anything else built on `/v1/chat/completions`.
+
+## Configure
+
+Only the base URL and key change:
+
+| Setting | Official OpenAI | Triw |
+| --- | --- | --- |
+| Base URL | `https://api.openai.com/v1` | `https://router.triw.io/v1` |
+| API key | `sk-proj-...` from OpenAI | `sk-...` from the Triw console |
+| Model | OpenAI ids | ids your key can see in `GET /v1/models` |
+
+<CodeGroup>
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-...",                      # Triw key
+    base_url="https://router.triw.io/v1",  # not api.openai.com
+)
+
+resp = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "Summarise this in one line: ..."}],
+)
+print(resp.choices[0].message.content)
+```
+```javascript Node.js
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.TRIW_API_KEY,
+  baseURL: "https://router.triw.io/v1",
+});
+
+const resp = await client.chat.completions.create({
+  model: "gpt-4o-mini",
+  messages: [{ role: "user", content: "Summarise this in one line: ..." }],
+});
+console.log(resp.choices[0].message.content);
+```
+```bash curl
+curl https://router.triw.io/v1/chat/completions \
+  -H "Authorization: Bearer $TRIW_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"ping"}]}'
+```
+</CodeGroup>
+
+## Streaming
+
+```python
+stream = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "Write a haiku about latency."}],
+    stream=True,
+)
+for chunk in stream:
+    delta = chunk.choices[0].delta.content
+    if delta:
+        print(delta, end="", flush=True)
+```
+
+Triw relays server-sent events as they arrive. If your own proxy sits in front of the client, disable buffering there or deltas will arrive in bursts.
+
+## Supported OpenAI routes
+
+`/v1/chat/completions`, `/v1/completions`, `/v1/responses`, `/v1/embeddings`, `/v1/models`, `/v1/images/generations`, `/v1/images/edits`, `/v1/audio/speech`, `/v1/audio/transcriptions`, `/v1/audio/translations`, `/v1/moderations`, `/v1/rerank`, `/v1/files`, `/v1/fine-tunes`.
+
+## Notes that save debugging time
+
+- Do not append `/chat/completions` to the base URL yourself if the SDK already does it.
+- `organization` and `project` headers from the OpenAI SDK are ignored.
+- Tool calling, JSON mode, and `response_format` are passed through to the upstream model. Whether they work depends on the model, not on Triw.
+- Error bodies follow the OpenAI shape; see [Errors](/errors) for the code table.

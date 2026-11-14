@@ -1,0 +1,80 @@
+---
+title: "OpenAI SDK"
+description: "Arahkan SDK resmi OpenAI ke Triw — dua field berubah, sisanya tetap."
+---
+
+Semua klien yang berbicara format OpenAI jalan tanpa modifikasi di Triw: `openai` (Python, Node, Go, .NET), LangChain, LlamaIndex, Vercel AI SDK, dan lainnya yang memakai `/v1/chat/completions`.
+
+## Konfigurasi
+
+Hanya base URL dan key yang berubah:
+
+| Setting | OpenAI resmi | Triw |
+| --- | --- | --- |
+| Base URL | `https://api.openai.com/v1` | `https://router.triw.io/v1` |
+| API key | `sk-proj-...` dari OpenAI | `sk-...` dari console Triw |
+| Model | id OpenAI | id yang terlihat di `GET /v1/models` |
+
+<CodeGroup>
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-...",
+    base_url="https://router.triw.io/v1",
+)
+
+resp = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "Ringkas ini dalam satu baris: ..."}],
+)
+print(resp.choices[0].message.content)
+```
+```javascript Node.js
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.TRIW_API_KEY,
+  baseURL: "https://router.triw.io/v1",
+});
+
+const resp = await client.chat.completions.create({
+  model: "gpt-4o-mini",
+  messages: [{ role: "user", content: "Ringkas ini dalam satu baris: ..." }],
+});
+console.log(resp.choices[0].message.content);
+```
+```bash curl
+curl https://router.triw.io/v1/chat/completions \
+  -H "Authorization: Bearer $TRIW_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"ping"}]}'
+```
+</CodeGroup>
+
+## Streaming
+
+```python
+stream = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "Tulis haiku tentang latensi."}],
+    stream=True,
+)
+for chunk in stream:
+    delta = chunk.choices[0].delta.content
+    if delta:
+        print(delta, end="", flush=True)
+```
+
+Triw meneruskan server-sent events apa adanya. Kalau ada proxy sendiri di depan klien, matikan buffering di sana atau delta akan datang menumpuk.
+
+## Route OpenAI yang didukung
+
+`/v1/chat/completions`, `/v1/completions`, `/v1/responses`, `/v1/embeddings`, `/v1/models`, `/v1/images/generations`, `/v1/images/edits`, `/v1/audio/speech`, `/v1/audio/transcriptions`, `/v1/audio/translations`, `/v1/moderations`, `/v1/rerank`, `/v1/files`, `/v1/fine-tunes`.
+
+## Hal yang sering menghemat waktu debugging
+
+- Jangan menambahkan `/chat/completions` ke base URL bila SDK sudah melakukannya.
+- Header `organization` dan `project` dari SDK OpenAI diabaikan.
+- Tool calling, JSON mode, dan `response_format` diteruskan ke model upstream. Berhasil atau tidaknya tergantung model, bukan Triw.
+- Body error mengikuti bentuk OpenAI; tabel kode ada di [Error](/id/errors).

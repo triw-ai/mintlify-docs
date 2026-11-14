@@ -1,0 +1,58 @@
+---
+title: "Claude Code"
+description: "Run Anthropic's CLI against Triw with two environment variables."
+---
+
+Claude Code speaks the Anthropic Messages API, which Triw implements. Point it at the gateway and it works with any `claude-*` model your key can reach — plus non-Anthropic models exposed through the same route.
+
+## Set the environment
+
+<CodeGroup>
+```bash macOS / Linux
+export ANTHROPIC_BASE_URL="https://router.triw.io"
+export ANTHROPIC_AUTH_TOKEN="sk-..."   # Triw key
+claude
+```
+```powershell Windows (PowerShell)
+$env:ANTHROPIC_BASE_URL = "https://router.triw.io"
+$env:ANTHROPIC_AUTH_TOKEN = "sk-..."
+claude
+```
+</CodeGroup>
+
+To make it permanent for a project, use a `.envrc`/direnv, or Claude Code's settings file:
+
+```json ~/.claude/settings.json
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://router.triw.io",
+    "ANTHROPIC_AUTH_TOKEN": "sk-..."
+  }
+}
+```
+
+## Pin a model
+
+```bash
+claude --model claude-sonnet-4-5
+```
+
+List what your key may use first:
+
+```bash
+curl https://router.triw.io/v1/models -H "Authorization: Bearer $ANTHROPIC_AUTH_TOKEN"
+```
+
+## Verify
+
+Inside Claude Code, ask a trivial question. If the reply arrives, routing is correct. If it fails:
+
+| Symptom | Cause |
+| --- | --- |
+| `401` immediately | `ANTHROPIC_AUTH_TOKEN` empty or has quotes/whitespace |
+| `404 model_not_found` | Model not in the key's group |
+| Requests go to `api.anthropic.com` | `ANTHROPIC_BASE_URL` not exported in the shell that launched `claude` |
+
+<Note>
+`ANTHROPIC_API_KEY` takes precedence in some Claude Code versions. If traffic still goes to Anthropic, unset it and keep only `ANTHROPIC_AUTH_TOKEN`.
+</Note>

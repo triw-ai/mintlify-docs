@@ -1,0 +1,66 @@
+---
+title: "Quickstart"
+description: "Dari daftar akun sampai completion pertama dalam lima menit."
+---
+
+## 1. Buat akun
+
+Buka [router.triw.io](https://router.triw.io), daftar dengan email atau OAuth yang diaktifkan operator. Setelah login Anda masuk ke dashboard.
+
+## 2. Isi saldo
+
+Akun baru mendapat kuota gratis sesuai konfigurasi operator. Untuk menambah saldo: **Dashboard → Top up**, pilih metode pembayaran, atau tukarkan kode redeem bila ada.
+
+<Note>
+Harga per model ada di [halaman pricing](https://router.triw.io/pricing). Penagihan dihitung per request berdasarkan pemakaian token yang dilaporkan provider.
+</Note>
+
+## 3. Buat API key
+
+**Dashboard → API Keys → Create key**, lalu tentukan:
+
+| Field | Fungsi |
+| --- | --- |
+| Name | Label untuk pelacakan Anda sendiri |
+| Group | Menentukan pool upstream dan pengali harga yang dipakai key |
+| Quota | Batas pemakaian untuk key ini. Kosongkan bila ingin mengikuti saldo akun |
+| Expiry | Tanggal kedaluwarsa, opsional |
+| Allowed models | Daftar model yang boleh dipakai; kosong berarti semua model di grup tersebut |
+
+Salin key sekali (format `sk-...`) dan simpan sebagai secret. Console masih bisa menampilkannya, tapi environment variable lebih aman.
+
+## 4. Kirim request
+
+```bash
+export TRIW_API_KEY="sk-..."
+export TRIW_BASE_URL="https://router.triw.io"
+
+curl "$TRIW_BASE_URL/v1/chat/completions" \
+  -H "Authorization: Bearer $TRIW_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o-mini",
+    "messages": [
+      {"role": "system", "content": "Anda asisten yang ringkas."},
+      {"role": "user", "content": "Apa itu token?"}
+    ],
+    "stream": false
+  }'
+```
+
+Response sukses mengikuti bentuk standar OpenAI dengan isi jawaban di `choices[0].message.content`.
+
+## 5. Cek model yang tersedia untuk key Anda
+
+```bash
+curl "$TRIW_BASE_URL/v1/models" -H "Authorization: Bearer $TRIW_API_KEY"
+```
+
+Daftar ini difilter sesuai grup key, jadi isinya persis yang boleh Anda panggil. Kalau model yang Anda cari tidak ada, berarti grup key tersebut tidak mencakupnya — buat key di grup lain atau minta operator mengaktifkannya.
+
+## Lanjut ke
+
+- [Autentikasi](/id/authentication) — format header per protokol
+- [API keys](/id/api-keys) — grup, kuota, rotasi
+- [SDK](/id/sdks/openai) — drop-in untuk `openai`, `anthropic`, `google-genai`
+- [Tools](/id/tools/claude-code) — Claude Code, Codex, Cursor, dan lainnya

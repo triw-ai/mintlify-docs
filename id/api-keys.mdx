@@ -1,0 +1,71 @@
+---
+title: "API keys"
+description: "Membuat, membatasi, merotasi, dan mencabut key — serta efek nyata dari grup."
+---
+
+## Membuat key
+
+**Dashboard → API Keys → Create key**
+
+| Field | Saran |
+| --- | --- |
+| Name | Nama yang mudah dicari: `prod-backend`, `laptop-cursor` |
+| Group | Menentukan pool upstream dan pengali harga. Pilih sesuai paket Anda |
+| Quota | Batas untuk key ini; berguna untuk aplikasi klien dan CI |
+| Expiry | Isi untuk akses sementara |
+| Allowed models | Batasi key ke model tertentu; kosong berarti default grup |
+
+Secret ditampilkan setelah pembuatan dan tetap bisa dilihat di console. Perlakukan sesi console dan secret sama-sama sebagai kredensial.
+
+## Fungsi grup
+
+Grup adalah profil routing dan harga yang ditentukan operator. Dua key di satu akun bisa memakai grup berbeda, sehingga model dan harga yang terlihat juga berbeda.
+
+- Model per grup: panggil `GET /v1/models` dengan key tersebut.
+- Harga per grup: [halaman pricing](https://router.triw.io/pricing).
+- Jika muncul `model_not_found`, modelnya ada tapi tidak untuk grup key itu — ini penyebab paling umum.
+
+## Kuota key vs saldo akun
+
+Dua-duanya berlaku dan independen:
+
+```
+request diterima  =  kuota key masih ada  DAN  saldo akun > 0
+```
+
+Menyetel `Quota` pada key tidak menambah saldo. Jika terlalu kecil, hasilnya `insufficient_user_quota` walaupun akun masih punya dana.
+
+## Rotasi dan pencabutan
+
+1. Buat key pengganti dengan grup dan limit yang sama.
+2. Deploy ke aplikasi.
+3. Nonaktifkan key lama di console (atau hapus).
+
+Penonaktifan langsung berlaku untuk request baru. Request yang sedang streaming tetap selesai.
+
+## Penyimpanan key di kode
+
+<CodeGroup>
+```bash Environment variable
+export TRIW_API_KEY="sk-..."
+```
+```python Python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["TRIW_API_KEY"],
+    base_url="https://router.triw.io/v1",
+)
+```
+```javascript Node.js
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.TRIW_API_KEY,
+  baseURL: "https://router.triw.io/v1",
+});
+```
+</CodeGroup>
+
+Jangan menyertakan key di bundle frontend. Untuk klien browser, proxy lewat backend Anda dan simpan key di sisi server.

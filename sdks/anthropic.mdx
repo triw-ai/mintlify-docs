@@ -1,0 +1,83 @@
+---
+title: "Anthropic SDK"
+description: "Run the Anthropic SDK and Claude Code against /v1/messages on Triw."
+---
+
+Triw implements the Anthropic Messages API. Use the official `anthropic` SDK, or any client that targets `/v1/messages`.
+
+## Configure
+
+| Setting | Official Anthropic | Triw |
+| --- | --- | --- |
+| Base URL | `https://api.anthropic.com` | `https://router.triw.io` |
+| Key | `sk-ant-...` | `sk-...` from Triw |
+| Endpoint | `/v1/messages` | `/v1/messages` (same path) |
+
+Unlike the OpenAI SDK, the Anthropic SDK does **not** append `/v1` for you — pass the host only.
+
+<CodeGroup>
+```python Python
+import anthropic
+
+client = anthropic.Anthropic(
+    api_key="sk-...",                 # Triw key
+    base_url="https://router.triw.io" # host only
+)
+
+msg = client.messages.create(
+    model="claude-sonnet-4-5",
+    max_tokens=512,
+    messages=[{"role": "user", "content": "Explain TCP slow start in 3 bullets."}],
+)
+print(msg.content[0].text)
+```
+```bash curl
+curl https://router.triw.io/v1/messages \
+  -H "x-api-key: $TRIW_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-sonnet-4-5",
+    "max_tokens": 256,
+    "messages": [{"role": "user", "content": "ping"}]
+  }'
+```
+```javascript Node.js
+import Anthropic from "@anthropic-ai/sdk";
+
+const client = new Anthropic({
+  apiKey: process.env.TRIW_API_KEY,
+  baseURL: "https://router.triw.io",
+});
+
+const msg = await client.messages.create({
+  model: "claude-sonnet-4-5",
+  max_tokens: 512,
+  messages: [{ role: "user", content: "ping" }],
+});
+```
+</CodeGroup>
+
+## Authentication details
+
+- `x-api-key: sk-...` is accepted on Anthropic routes.
+- `Authorization: Bearer sk-...` also works — useful when a tool only exposes one auth style.
+- Keep the `anthropic-version` header. Triw forwards it; the upstream channel decides whether it matters.
+
+## Token counting
+
+```bash
+curl https://router.triw.io/v1/messages/count_tokens \
+  -H "x-api-key: $TRIW_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"claude-sonnet-4-5","messages":[{"role":"user","content":"hello"}]}'
+```
+
+## Streaming and tools
+
+`stream: true` works; events arrive in Anthropic's SSE format (`message_start`, `content_block_delta`, `message_stop`). Tool use (`tools`, `tool_choice`) is passed through unchanged.
+
+## Using Claude models from an OpenAI-style client
+
+You can also call Claude models through `/v1/chat/completions`, since Triw translates between formats. Pick one style per integration; mixing both in one codebase doubles the number of response parsers you maintain.

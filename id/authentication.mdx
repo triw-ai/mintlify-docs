@@ -1,0 +1,38 @@
+---
+title: "Autentikasi"
+description: "Cara Triw memverifikasi request, dan header mana yang dipakai tiap protokol."
+---
+
+Setiap request memerlukan API key dari console. Satu key berlaku untuk semua protokol kompatibel — OpenAI, Anthropic, Gemini — karena Triw membaca key dari header yang lazim dipakai protokol tersebut.
+
+## Header yang diterima
+
+| Protokol | Header | Catatan |
+| --- | --- | --- |
+| Gaya OpenAI | `Authorization: Bearer sk-...` | Utama, bisa dipakai di semua endpoint |
+| Gaya Anthropic | `x-api-key: sk-...` | Diterima di `/v1/messages` |
+| Gaya Gemini | `x-goog-api-key: sk-...` | Diterima di `/v1beta/...` |
+
+Bila mengirim lebih dari satu, `Authorization` yang dipakai.
+
+```bash
+curl https://router.triw.io/v1/chat/completions \
+  -H "Authorization: Bearer sk-..." \
+  -H "Content-Type: application/json" \
+  -d '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"ping"}]}'
+```
+
+## Format dan cakupan key
+
+- Key berawalan `sk-` dan dibuat per akun, bukan per model.
+- Key mewarisi **grup** dan **kuota** yang Anda set saat membuatnya, plus masa berlaku dan allow-list model bila diisi.
+- Key ditampilkan di console. Perlakukan seperti password; kalau bocor, rotasi segera — lihat [API keys](/id/api-keys).
+
+## Yang bukan API key
+
+- Cookie sesi console (login browser) tidak berlaku untuk `/v1/*`.
+- Key provider (OpenAI, Anthropic, Google) tidak bisa dipakai di Triw. Hanya key Triw yang diterima.
+
+## Perilaku saat gagal
+
+Key tidak ada, salah format, kedaluwarsa, dinonaktifkan, atau kuotanya habis akan mengembalikan HTTP `401`/`403` dengan `code` `invalid_api_key` atau `insufficient_user_quota`. Tabel lengkap: [Error](/id/errors).

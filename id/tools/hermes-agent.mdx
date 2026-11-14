@@ -1,0 +1,39 @@
+---
+title: "Hermes Agent"
+description: "Mendaftarkan Triw sebagai provider kustom kompatibel OpenAI di Hermes Agent."
+---
+
+Hermes Agent (Nous Research) menerima provider kustom. Triw menjadi satu entri di config-nya, setelah itu semua model Triw bisa dipilih seperti provider bawaan.
+
+## Konfigurasi
+
+Tambahkan blok provider ke config Hermes (`config.yaml` di direktori profil Hermes):
+
+```yaml config.yaml
+provider: custom
+custom_providers:
+  - name: triw
+    base_url: https://router.triw.io/v1
+    api_key: ${TRIW_API_KEY}
+    model: claude-sonnet-4-5
+```
+
+```bash
+export TRIW_API_KEY="sk-..."
+```
+
+Nama key mengikuti skema provider Hermes; nilainya selalu: base URL `https://router.triw.io/v1` dan key `sk-` Triw.
+
+## Verifikasi
+
+```bash
+hermes "balas ok"
+```
+
+Lalu cek log Triw. `401` berarti environment variable tidak sampai ke Hermes — export di shell yang menjalankan agent, atau tulis key langsung di file config.
+
+## Catatan
+
+- Biarkan `base_url` di `/v1`; agent menambahkan endpoint konkretnya.
+- Bila menjalankan beberapa agent, beri masing-masing key Triw sendiri agar pemakaian bisa dilacak di console.
+- Id model tidak perlu prefix provider — kirim id apa adanya dari `GET /v1/models`.

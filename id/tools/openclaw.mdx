@@ -1,0 +1,39 @@
+---
+title: "OpenClaw"
+description: "Mengarahkan OpenClaw ke Triw sebagai provider kompatibel OpenAI."
+---
+
+OpenClaw punya lapisan provider/model. Endpoint apa pun yang kompatibel OpenAI bisa didaftarkan, termasuk Triw, untuk chat maupun alur agent.
+
+## Konfigurasi
+
+1. Pasang OpenClaw mengikuti [docs.openclaw.ai](https://docs.openclaw.ai/docs/setup).
+2. Tambahkan entri provider yang mengarah ke Triw:
+
+```json ~/.openclaw/config.json
+{
+  "providers": {
+    "triw": {
+      "type": "openai-compatible",
+      "baseUrl": "https://router.triw.io/v1",
+      "apiKeyEnv": "TRIW_API_KEY"
+    }
+  }
+}
+```
+
+```bash
+export TRIW_API_KEY="sk-..."
+```
+
+Skema provider berbeda antar rilis OpenClaw — bila ada field ditolak, jalankan `openclaw config validate` atau buka UI provider, lalu petakan tiga nilai yang sama: base URL, key, id model.
+
+## Verifikasi
+
+Jalankan prompt satu baris lewat OpenClaw, lalu pastikan entri muncul di log Triw. Kalau log kosong, OpenClaw memakai provider default — cek provider mana yang aktif pada profil yang Anda jalankan.
+
+## Catatan
+
+- Pakai sufiks `/v1` sesuai kontrak kompatibel OpenAI.
+- Alur agent butuh model dengan tool-calling; pilih sesuai kebutuhan, bukan semata harga.
+- Sediakan key Triw terpisah per mesin agar pencabutan tidak berdampak luas.

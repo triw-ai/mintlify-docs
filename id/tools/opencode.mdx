@@ -1,0 +1,52 @@
+---
+title: "OpenCode"
+description: "Menambahkan Triw sebagai provider kompatibel OpenAI di opencode.json."
+---
+
+OpenCode membaca provider dari `opencode.json` (per proyek) atau `~/.config/opencode/opencode.json` (global). Daftarkan Triw sekali, lalu pilih model per sesi.
+
+## Konfigurasi
+
+```json ~/.config/opencode/opencode.json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "triw": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Triw",
+      "options": {
+        "baseURL": "https://router.triw.io/v1",
+        "apiKey": "{env:TRIW_API_KEY}"
+      },
+      "models": {
+        "claude-sonnet-4-5": { "name": "Claude Sonnet 4.5" },
+        "gpt-4o-mini": { "name": "GPT-4o mini" }
+      }
+    }
+  }
+}
+```
+
+```bash
+export TRIW_API_KEY="sk-..."
+opencode
+```
+
+`{env:TRIW_API_KEY}` menjaga secret tetap di luar file. Key literal juga bisa, tapi mudah bocor ke repo.
+
+## Memilih model
+
+```bash
+opencode --model triw/claude-sonnet-4-5
+```
+
+Atau pilih lewat pengalih model (`/models` di TUI).
+
+## Verifikasi
+
+Minta sesuatu yang harus memanggil tool, mis. "list file di direktori ini". Jawaban teks tanpa tool pada model yang mendukung tool berarti masalah model, bukan config — panggilan HTTP-nya sudah berhasil.
+
+## Catatan
+
+- Hanya model di `provider.triw.models` yang muncul di picker; tambahkan yang benar-benar Anda pakai.
+- Nama paket npm penting: `@ai-sdk/openai-compatible` untuk endpoint kompatibel OpenAI generik.

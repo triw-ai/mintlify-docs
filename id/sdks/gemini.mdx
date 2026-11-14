@@ -1,0 +1,64 @@
+---
+title: "Gemini SDK"
+description: "Memakai /v1beta/models di Triw dengan Google Gen AI SDK atau REST."
+---
+
+Triw menyediakan permukaan REST Gemini di bawah `/v1beta`, plus route gaya OpenAI untuk daftar model.
+
+## Konfigurasi
+
+| Setting | Google resmi | Triw |
+| --- | --- | --- |
+| Host | `https://generativelanguage.googleapis.com` | `https://router.triw.io` |
+| Path | `/v1beta/models/{model}:generateContent` | sama |
+| Key | Google API key | `sk-...` dari Triw via `x-goog-api-key` atau `Authorization` |
+
+```bash
+curl "https://router.triw.io/v1beta/models/gemini-2.5-flash:generateContent" \
+  -H "x-goog-api-key: $TRIW_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "contents": [{"parts": [{"text": "Jelaskan vector search dalam dua kalimat."}]}]
+  }'
+```
+
+Streaming memakai sufiks metode standar:
+
+```bash
+curl "https://router.triw.io/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse" \
+  -H "x-goog-api-key: $TRIW_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"contents":[{"parts":[{"text":"Hitung sampai lima."}]}]}'
+```
+
+## Dengan Google Gen AI SDK
+
+```python
+from google import genai
+
+client = genai.Client(
+    api_key="sk-...",
+    http_options={"base_url": "https://router.triw.io"},
+)
+
+resp = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents="Jelaskan consistent hashing dalam dua kalimat.",
+)
+print(resp.text)
+```
+
+Nama opsi berbeda antar generasi SDK (`google-generativeai` vs `google-genai`); nilainya selalu host `https://router.triw.io` dan key `sk-` Anda.
+
+## Akses gaya OpenAI ke model yang sama
+
+Kalau stack Anda sudah berbentuk OpenAI, lewati protokol Gemini:
+
+```bash
+curl https://router.triw.io/v1/chat/completions \
+  -H "Authorization: Bearer $TRIW_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"gemini-2.5-flash","messages":[{"role":"user","content":"ping"}]}'
+```
+
+Penemuan model untuk klien gaya OpenAI ada di `GET /v1/models`; daftar native Gemini ada di `/v1beta/openai/models`.

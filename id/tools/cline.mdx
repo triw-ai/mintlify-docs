@@ -1,0 +1,25 @@
+---
+title: "Cline"
+description: "Menyiapkan Cline (VS Code) dengan provider kompatibel OpenAI yang mengarah ke Triw."
+---
+
+Cline menyediakan tipe provider **OpenAI Compatible**, yang persis seperti yang diekspos Triw. Tidak perlu proxy tambahan.
+
+## Konfigurasi
+
+1. Buka panel Cline di VS Code → **Settings**.
+2. **API Provider**: `OpenAI Compatible`.
+3. **Base URL**: `https://router.triw.io/v1`
+4. **API Key**: key `sk-...` Anda.
+5. **Model ID**: id dari `GET /v1/models` (mis. `claude-sonnet-4-5`, `gpt-4o-mini`).
+6. Opsional: isi **Context window** dan **max output tokens** sesuai batas model — Cline memakainya untuk merencanakan tool call.
+
+## Uji cepat
+
+Minta Cline membaca satu file di workspace. Kalau dia menjawab dan log Triw mencatat request-nya, koneksi sudah benar.
+
+## Catatan
+
+- Cline mengirim definisi tool setiap turn; pilih model dengan tool-calling yang solid. Model murah sering gagal di loop agent, bukan di HTTP-nya.
+- Kalau muncul `400 invalid_request_error`, model menolak skema tool atau parameter yang tidak didukung — coba model lain sebelum mengubah config.
+- Sediakan key khusus untuk Cline agar bisa dicabut tanpa mengganggu key backend.

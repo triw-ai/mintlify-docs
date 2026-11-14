@@ -1,0 +1,65 @@
+---
+title: "Error dan troubleshooting"
+description: "Struktur error, tabel kode, dan perbaikan yang benar-benar menyelesaikan tiap kasus."
+---
+
+## Struktur error
+
+Endpoint chat, embedding, image, dan audio mengembalikan error berbentuk OpenAI:
+
+```json
+{
+  "error": {
+    "message": "insufficient user quota",
+    "type": "new_api_error",
+    "code": "insufficient_user_quota"
+  }
+}
+```
+
+Pakai `code` di logika program, `message` untuk log manusia. Pesan bisa berubah; kode stabil.
+
+## Daftar kode
+
+| `code` | HTTP | Arti | Perbaikan |
+| --- | --- | --- | --- |
+| `invalid_api_key` | 401 | Key tidak ada, salah format, atau tidak dikenal | Kirim `Authorization: Bearer sk-...`; pastikan key tidak dinonaktifkan |
+| `insufficient_user_quota` | 403 | Saldo akun habis, atau kuota key itu sendiri tercapai | Top-up, atau naikkan/hapus kuota key |
+| `insufficient_quota` | 429 | Provider upstream melaporkan kuotanya habis | Coba lagi nanti atau pindah model |
+| `model_not_found` | 404 | Model tidak tersedia untuk grup key ini | Cek `GET /v1/models` dengan key yang sama |
+| `rate_limit` | 429 | Terlalu banyak request untuk key atau channel | Backoff, gunakan retry eksponensial |
+| `channel_error` | 502 | Channel upstream gagal, dimatikan, atau timeout | Retry; bila menetap, laporkan model dan waktunya |
+| `invalid_request_error` | 400 | Body ditolak sebelum mencapai upstream | Validasi JSON, field wajib, nama parameter |
+
+## Troubleshooting per gejala
+
+### `401 invalid_api_key` padahal key terlihat benar
+
+1. Tidak ada spasi atau tanda kutip yang ikut tersimpan di environment variable.
+2. Header harus `Authorization: Bearer <key>` — bukan `x-api-key` di route OpenAI.
+3. Key milik deployment Triw yang sama (base URL `https://router.triw.io`).
+4. Key tidak dinonaktifkan dan belum kedaluwarsa (console menampilkan keduanya).
+
+### Berhasil di curl, gagal di SDK
+
+Biasanya path ganda: SDK menambahkan `/chat/completions` ke base URL, jadi base harus `https://router.triw.io/v1` — jangan `https://router.triw.io/v1/chat/completions`.
+
+### `model_not_found` untuk model yang terlihat di halaman pricing
+
+Halaman pricing mencakup semua grup. Grup key Anda lebih sempit. Buat key di grup yang tepat atau minta operator mengaktifkan model untuk grup Anda.
+
+### Streaming berhenti di tengah jawaban
+
+Proxy dan network melakukan buffering. Jika ada reverse proxy sendiri di depan klien, matikan buffering response untuk `/v1/*` dan naikkan read timeout di atas 300 detik. Triw sendiri meneruskan stream sampai upstream selesai.
+
+### Request panjang gagal dengan 5xx
+
+Model reasoning bisa menahan koneksi beberapa menit. Set timeout klien minimal 600 detik untuk model seperti itu, dan utamakan streaming agar koneksi tetap hidup.
+
+### `channel_error` melonjak tiba-tiba
+
+Biasanya satu channel upstream sedang bermasalah. Retry dengan backoff; kalau model yang sama gagal lebih dari beberapa menit, ganti model atau laporkan.
+
+## Saat melaporkan masalah
+
+Sertakan: waktu beserta zona waktu, nama model, `code` dari body error, dan request id dari response header bila ada. Data itu langsung memetakan ke entri log.

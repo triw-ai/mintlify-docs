@@ -1,0 +1,48 @@
+---
+title: "Balance and top-up"
+description: "How quota is measured, how top-ups land, and how to read your usage."
+---
+
+## How billing works
+
+Triw meters each request from the usage the upstream provider reports (prompt tokens, completion tokens, cached tokens, image count, audio seconds — depending on the model). The cost is converted into **quota**, the internal unit:
+
+```
+500,000 quota = $1.00
+```
+
+So `1 quota = $0.000002`. The dashboard shows both quota and the equivalent USD amount.
+
+Per-model prices are published on the [pricing page](https://router.triw.io/pricing). A model's price is expressed as a multiplier over the base token price of its class, so the same request can cost differently across groups.
+
+## Checking your balance
+
+- Console: **Dashboard → Overview** (balance, today's spend, trend).
+- API: `GET /api/user/self` with your session token, or `GET /api/user/dashboard` for aggregate data.
+
+## Top-up
+
+**Dashboard → Top up** offers whatever methods the operator enabled:
+
+| Method | Flow |
+| --- | --- |
+| Payment gateway | Choose an amount, pay the generated invoice, balance is credited after the provider confirms |
+| Redemption code | Paste the code; the amount is added immediately |
+| Subscription / plan | If enabled, recurring allowance instead of pay-per-token |
+
+<Warning>
+Invoices are only credited after the payment provider confirms the transaction. If you paid but the balance did not move, wait for the provider callback, then refresh. Still missing after 15 minutes — open a ticket with the invoice ID.
+</Warning>
+
+## Reading usage
+
+Each request writes a log entry with model, tokens, quota consumed, latency and status. Use **Dashboard → Logs** to filter by key, model, or time range. Logs are the source of truth when reconciling spend.
+
+## Common billing surprises
+
+| Symptom | Cause |
+| --- | --- |
+| Balance dropped faster than expected | Long context or high `max_tokens`; output tokens cost more than input |
+| `insufficient_user_quota` with visible balance | The **key's** quota is the blocker, not the account |
+| Two keys, different cost for the same prompt | Different groups → different multiplier |
+| Streaming request billed more than the visible answer | Usage includes reasoning tokens and cached context where the upstream reports them |

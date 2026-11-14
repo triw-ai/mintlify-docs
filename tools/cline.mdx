@@ -1,0 +1,25 @@
+---
+title: "Cline"
+description: "Configure Cline (VS Code) with an OpenAI-compatible provider pointing at Triw."
+---
+
+Cline ships an **OpenAI Compatible** provider type, which is exactly what Triw exposes. No proxy or gateway shim required.
+
+## Configure
+
+1. Open the Cline panel in VS Code → **Settings**.
+2. **API Provider**: `OpenAI Compatible`.
+3. **Base URL**: `https://router.triw.io/v1`
+4. **API Key**: your `sk-...` key.
+5. **Model ID**: an id from `GET /v1/models` (e.g. `claude-sonnet-4-5`, `gpt-4o-mini`).
+6. Optional: set **Context window** and **max output tokens** to the model's real limits — Cline uses these to plan tool calls.
+
+## Sanity check
+
+Ask Cline to read a file in your workspace. If it answers and the Triw log shows the request, the wiring is done.
+
+## Notes
+
+- Cline sends tool definitions on every turn; pick a model with solid tool-calling. Cheap models often fail the agent loop rather than the HTTP call.
+- If you see `400 invalid_request_error`, the model rejected the tool schema or an unsupported parameter — try a different model before changing the config.
+- Keep a dedicated key for Cline so you can revoke it without touching backend keys.

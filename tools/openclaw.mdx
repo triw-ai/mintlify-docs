@@ -1,0 +1,39 @@
+---
+title: "OpenClaw"
+description: "Point OpenClaw at Triw as an OpenAI-compatible provider."
+---
+
+OpenClaw ships with a provider/model layer. Any OpenAI-compatible endpoint can be registered, which covers Triw for both chat and agent workflows.
+
+## Configure
+
+1. Install OpenClaw following [docs.openclaw.ai](https://docs.openclaw.ai/docs/setup).
+2. Add a provider entry pointing at Triw:
+
+```json ~/.openclaw/config.json
+{
+  "providers": {
+    "triw": {
+      "type": "openai-compatible",
+      "baseUrl": "https://router.triw.io/v1",
+      "apiKeyEnv": "TRIW_API_KEY"
+    }
+  }
+}
+```
+
+```bash
+export TRIW_API_KEY="sk-..."
+```
+
+Provider schema keys vary between OpenClaw releases — if a field is rejected, run `openclaw config validate` (or open the provider UI) and map the same three values: base URL, key, model id.
+
+## Verify
+
+Run a one-line prompt through OpenClaw and confirm the entry in the Triw log. If the log stays empty, OpenClaw is using its default provider — check which provider is active for the profile you launched.
+
+## Notes
+
+- Use the `/v1` suffix, matching the OpenAI-compatible contract.
+- Agent workflows need tool-calling models; pick accordingly rather than optimizing for price.
+- Keep a dedicated Triw key per machine so revocation is surgical.

@@ -1,0 +1,58 @@
+---
+title: "Claude Code"
+description: "Menjalankan CLI Anthropic lewat Triw dengan dua environment variable."
+---
+
+Claude Code berbicara Anthropic Messages API, yang diimplementasikan Triw. Arahkan ke gateway dan model `claude-*` apa pun yang bisa diakses key Anda akan bekerja — termasuk model non-Anthropic yang diekspos lewat route yang sama.
+
+## Set environment
+
+<CodeGroup>
+```bash macOS / Linux
+export ANTHROPIC_BASE_URL="https://router.triw.io"
+export ANTHROPIC_AUTH_TOKEN="sk-..."
+claude
+```
+```powershell Windows (PowerShell)
+$env:ANTHROPIC_BASE_URL = "https://router.triw.io"
+$env:ANTHROPIC_AUTH_TOKEN = "sk-..."
+claude
+```
+</CodeGroup>
+
+Agar permanen per proyek, gunakan direnv/`.envrc`, atau file settings Claude Code:
+
+```json ~/.claude/settings.json
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://router.triw.io",
+    "ANTHROPIC_AUTH_TOKEN": "sk-..."
+  }
+}
+```
+
+## Pin model
+
+```bash
+claude --model claude-sonnet-4-5
+```
+
+Cek dulu apa yang boleh dipakai key Anda:
+
+```bash
+curl https://router.triw.io/v1/models -H "Authorization: Bearer $ANTHROPIC_AUTH_TOKEN"
+```
+
+## Verifikasi
+
+Di dalam Claude Code, ajukan pertanyaan sepele. Kalau jawaban muncul, routing benar. Kalau gagal:
+
+| Gejala | Penyebab |
+| --- | --- |
+| `401` langsung | `ANTHROPIC_AUTH_TOKEN` kosong atau ada tanda kutip/spasi |
+| `404 model_not_found` | Model tidak ada di grup key |
+| Request tetap ke `api.anthropic.com` | `ANTHROPIC_BASE_URL` tidak ter-export di shell yang menjalankan `claude` |
+
+<Note>
+Pada sebagian versi Claude Code, `ANTHROPIC_API_KEY` diprioritaskan. Bila trafik masih ke Anthropic, hapus variabel itu dan sisakan `ANTHROPIC_AUTH_TOKEN`.
+</Note>

@@ -1,0 +1,69 @@
+---
+title: "Anthropic SDK"
+description: "Menjalankan Anthropic SDK dan Claude Code lewat /v1/messages di Triw."
+---
+
+Triw mengimplementasikan Anthropic Messages API. Pakai SDK resmi `anthropic`, atau klien apa pun yang menargetkan `/v1/messages`.
+
+## Konfigurasi
+
+| Setting | Anthropic resmi | Triw |
+| --- | --- | --- |
+| Base URL | `https://api.anthropic.com` | `https://router.triw.io` |
+| Key | `sk-ant-...` | `sk-...` dari Triw |
+| Endpoint | `/v1/messages` | `/v1/messages` (path sama) |
+
+Berbeda dari SDK OpenAI, SDK Anthropic **tidak** menambahkan `/v1` otomatis — kirim host saja.
+
+<CodeGroup>
+```python Python
+import anthropic
+
+client = anthropic.Anthropic(
+    api_key="sk-...",
+    base_url="https://router.triw.io"
+)
+
+msg = client.messages.create(
+    model="claude-sonnet-4-5",
+    max_tokens=512,
+    messages=[{"role": "user", "content": "Jelaskan TCP slow start dalam 3 poin."}],
+)
+print(msg.content[0].text)
+```
+```bash curl
+curl https://router.triw.io/v1/messages \
+  -H "x-api-key: $TRIW_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-sonnet-4-5",
+    "max_tokens": 256,
+    "messages": [{"role": "user", "content": "ping"}]
+  }'
+```
+</CodeGroup>
+
+## Detail autentikasi
+
+- `x-api-key: sk-...` diterima di route Anthropic.
+- `Authorization: Bearer sk-...` juga berlaku — berguna untuk tool yang hanya menyediakan satu gaya auth.
+- Pertahankan header `anthropic-version`. Triw meneruskannya; channel upstream yang menentukan apakah nilainya berpengaruh.
+
+## Hitung token
+
+```bash
+curl https://router.triw.io/v1/messages/count_tokens \
+  -H "x-api-key: $TRIW_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"claude-sonnet-4-5","messages":[{"role":"user","content":"hello"}]}'
+```
+
+## Streaming dan tools
+
+`stream: true` berjalan; event datang dalam format SSE Anthropic (`message_start`, `content_block_delta`, `message_stop`). Tool use (`tools`, `tool_choice`) diteruskan tanpa perubahan.
+
+## Memakai model Claude dari klien gaya OpenAI
+
+Model Claude juga bisa dipanggil lewat `/v1/chat/completions` karena Triw menerjemahkan format. Pilih satu gaya per integrasi; mencampur keduanya berarti Anda memelihara dua parser response.

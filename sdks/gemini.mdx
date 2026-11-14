@@ -1,0 +1,64 @@
+---
+title: "Gemini SDK"
+description: "Use /v1beta/models on Triw with the Google Gen AI SDK or REST."
+---
+
+Triw exposes the Gemini REST surface under `/v1beta`, plus an OpenAI-style route for models.
+
+## Configure
+
+| Setting | Official Google | Triw |
+| --- | --- | --- |
+| Host | `https://generativelanguage.googleapis.com` | `https://router.triw.io` |
+| Path | `/v1beta/models/{model}:generateContent` | same |
+| Key | Google API key | `sk-...` from Triw, via `x-goog-api-key` or `Authorization` |
+
+```bash
+curl "https://router.triw.io/v1beta/models/gemini-2.5-flash:generateContent" \
+  -H "x-goog-api-key: $TRIW_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "contents": [{"parts": [{"text": "Explain vector search in two sentences."}]}]
+  }'
+```
+
+Streaming uses the standard method suffix:
+
+```bash
+curl "https://router.triw.io/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse" \
+  -H "x-goog-api-key: $TRIW_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"contents":[{"parts":[{"text":"Count to five."}]}]}'
+```
+
+## With the Google Gen AI SDK
+
+```python
+from google import genai
+
+client = genai.Client(
+    api_key="sk-...",
+    http_options={"base_url": "https://router.triw.io"},
+)
+
+resp = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents="Explain consistent hashing in two sentences.",
+)
+print(resp.text)
+```
+
+Exact option names differ between SDK generations (`google-generativeai` vs `google-genai`); the values are always host `https://router.triw.io` and your `sk-` key.
+
+## OpenAI-style access to the same models
+
+If your stack is already OpenAI-shaped, skip the Gemini protocol:
+
+```bash
+curl https://router.triw.io/v1/chat/completions \
+  -H "Authorization: Bearer $TRIW_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"gemini-2.5-flash","messages":[{"role":"user","content":"ping"}]}'
+```
+
+Model discovery for OpenAI-style clients is available at `GET /v1/models`; the Gemini-native listing lives under `/v1beta/openai/models`.

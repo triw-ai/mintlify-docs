@@ -1,0 +1,30 @@
+---
+title: "Cursor"
+description: "Memakai Triw sebagai endpoint OpenAI di dalam Cursor, dengan id model kustom."
+---
+
+Cursor mengizinkan override base URL OpenAI. Satu field itu memindahkan seluruh request keluarga OpenAI ke Triw, termasuk chat dan inline edit.
+
+## Langkah
+
+1. **Settings → Models → API Keys**.
+2. Aktifkan **OpenAI API Key**, tempel key `sk-...` Triw Anda.
+3. Aktifkan **Override OpenAI Base URL**, isi:
+
+```
+https://router.triw.io/v1
+```
+
+4. Klik **Verify**, lalu **Add model** dan masukkan id persis dari `GET /v1/models`, misalnya `gpt-4o-mini`, `claude-sonnet-4-5`.
+
+Cursor hanya menampilkan model yang dikenali namanya; id kustom harus ditambahkan manual.
+
+## Cek koneksi
+
+Buka chat, ajukan satu pertanyaan singkat. Lalu buka **Dashboard → Logs** di console Triw — request harus tercatat pada key Anda. Kalau log kosong, Cursor masih memanggil OpenAI langsung (toggle override belum aktif).
+
+## Catatan
+
+- Fitur hosted Cursor (Tab completion, model proprietary Composer) belum tentu bisa dirutekan; override base URL berlaku untuk panggilan chat kompatibel OpenAI.
+- `model_not_found` di Cursor berarti id tersebut tidak ada di grup key Anda. Pakai key dari grup yang lebih luas atau ganti ke id yang terdaftar.
+- Cursor menyimpan key secara lokal dalam config teks biasa. Gunakan key khusus yang mudah dicabut.

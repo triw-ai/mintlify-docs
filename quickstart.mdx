@@ -1,47 +1,66 @@
 ---
 title: "Quickstart"
-description: "Begin with a guide on the fastest path to a successful outcome"
+description: "From sign-up to your first completion in five minutes."
 ---
 
-Describe how someone begins using your product. What is the first thing they need to do? Are there any prerequisites?
+## 1. Create an account
 
-A quickstart should take someone from zero to using your product. They'll get a quick win and a sense of what they can accomplish.
+Open [router.triw.io](https://router.triw.io) and sign up with email or an enabled OAuth provider. After sign-in you land on the dashboard.
 
-## Prerequisites
+## 2. Top up your balance
 
-Before you begin, you must have:
+New accounts start with whatever free quota the operator has configured. To add credit, go to **Dashboard → Top up** and choose a payment method, or redeem a code if you have one.
 
-- Requirement one (for example, Node.js 18+, a free account, an API key)
-- Requirement two (for example, a compatible device, a compatible browser, a compatible operating system)
+<Note>
+Prices are per model and are shown on the [pricing page](https://router.triw.io/pricing). Billing is metered per request from the actual token usage returned by the provider.
+</Note>
 
-## Get started
+## 3. Create an API key
 
-<Steps>
-  <Step title="Install">
-    Describe how to install your product or sign up.
+Go to **Dashboard → API Keys → Create key**, then set:
 
-    ```bash
-    npm install your-package
-    ```
-  </Step>
-  <Step title="Configure">
-    Describe any setup or configuration needed before first use.
+| Field | What it does |
+| --- | --- |
+| Name | Label for your own tracking |
+| Group | Which upstream pool and price multiplier the key uses |
+| Quota | Maximum spend this key may consume. Leave empty for "unlimited within your balance" |
+| Expiry | Optional date after which the key is rejected |
+| Allowed models | Optional allow-list; empty means all models available to the group |
 
-    ```bash
-    your-cli init
-    ```
-  </Step>
-  <Step title="Run it">
-    Show the first thing a user does to see it working.
+Copy the key once (format `sk-...`) and store it as a secret. The console can show it again, but environment variables are safer.
 
-    ```bash
-    your-cli start
-    ```
-  </Step>
-</Steps>
+## 4. Send a request
 
-<Tip>
-  Give people a way to get help. This could be a link to a support page, a chat with a customer support agent, or a forum for your product.
+```bash
+export TRIW_API_KEY="sk-..."   # your key
+export TRIW_BASE_URL="https://router.triw.io"
 
-  Example: Need help? Reach out to us at [support@yourcompany.com](mailto:support@yourcompany.com).
-</Tip>
+curl "$TRIW_BASE_URL/v1/chat/completions" \
+  -H "Authorization: Bearer $TRIW_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o-mini",
+    "messages": [
+      {"role": "system", "content": "You are a concise assistant."},
+      {"role": "user", "content": "What is a token?"}
+    ],
+    "stream": false
+  }'
+```
+
+A successful call returns the standard OpenAI response object with `choices[0].message.content`.
+
+## 5. Confirm which models you can use
+
+```bash
+curl "$TRIW_BASE_URL/v1/models" -H "Authorization: Bearer $TRIW_API_KEY"
+```
+
+The list is filtered by your key's group, so it reflects exactly what you are allowed to call. If a model is missing, the key's group does not include it — create a key in another group or ask the operator.
+
+## Next steps
+
+- [Authentication](/authentication) — header formats and key types
+- [API keys](/api-keys) — groups, quotas, rotation
+- [SDKs](/sdks/openai) — drop-in replacement for `openai`, `anthropic`, `google-genai`
+- [Tools](/tools/claude-code) — Claude Code, Codex, Cursor and others

@@ -1,0 +1,43 @@
+---
+title: "Model dan grup"
+description: "Mengetahui apa yang boleh dipanggil key Anda, dan kenapa nama model yang sama bisa berbeda antar grup."
+---
+
+Nama model diteruskan ke provider upstream, jadi pakai identifier milik provider: `gpt-4o-mini`, `claude-sonnet-4-5`, `gemini-2.5-flash`, `dall-e-3`, dan seterusnya.
+
+## Cek model yang bisa Anda pakai
+
+```bash
+curl https://router.triw.io/v1/models \
+  -H "Authorization: Bearer $TRIW_API_KEY"
+```
+
+Response berbentuk daftar model standar OpenAI, difilter sesuai grup key. Anggap endpoint ini sebagai acuan utama — isinya mencerminkan ketersediaan saat itu, bukan halaman statis.
+
+## Grup dalam satu paragraf
+
+Grup adalah profil yang ditentukan operator: menentukan *channel upstream mana* yang boleh dipakai sebuah key dan *berapa biayanya*. Model yang ada secara global tapi tidak ada di grup Anda menghasilkan:
+
+```json
+{"error":{"message":"model not found","type":"new_api_error","code":"model_not_found"}}
+```
+
+Solusi: buat key di grup yang memuat model tersebut, lalu cek ulang `/v1/models` dengan key itu.
+
+## Keluarga model yang diteruskan Triw
+
+| Kategori | Identifier umum | Endpoint |
+| --- | --- | --- |
+| Chat / reasoning | `gpt-*`, `claude-*`, `gemini-*`, `deepseek-*`, `qwen-*` | `/v1/chat/completions`, `/v1/messages`, `/v1beta/...` |
+| Embedding | `text-embedding-*`, `embedding-*` | `/v1/embeddings` |
+| Image generation | `dall-e-3`, `dall-e-2`, `gpt-image-*`, `flux-*` | `/v1/images/generations` |
+| Audio | `whisper-1`, `tts-1`, dan padanan provider | `/v1/audio/*` |
+| Rerank | `rerank-*` | `/v1/rerank` |
+
+Identifier mana yang benar-benar bisa dipanggil tergantung channel yang dipasang operator. Jawabannya ada di `/v1/models` untuk key Anda.
+
+## Memilih nama model
+
+- Gunakan string persis dari `/v1/models`. Salah ketik muncul sebagai `model_not_found`, bukan fallback diam-diam.
+- Untuk klien kompatibel OpenAI, tidak perlu prefix provider — kirim identifier apa adanya.
+- Untuk klien Anthropic, kirim id `claude-*`; Triw yang menerjemahkan request ke channel yang melayaninya.

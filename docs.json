@@ -1,53 +1,147 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mintlify Starter Kit",
+  "name": "Triw",
+  "description": "Unified AI API gateway: one key, one base URL, any model.",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#5B8CFF",
+    "light": "#5B8CFF",
+    "dark": "#8F6BFF"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "/favicon.png",
+  "logo": {
+    "light": "/logo/logo-light.png",
+    "dark": "/logo/logo-dark.png"
+  },
   "navigation": {
-    "pages": [
+    "languages": [
       {
-        "group": "Getting Started",
-        "pages": [
-          "index",
-          "quickstart"
+        "language": "en",
+        "groups": [
+          {
+            "group": "Getting started",
+            "pages": [
+              "index",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Account",
+            "pages": [
+              "authentication",
+              "api-keys",
+              "billing",
+              "models"
+            ]
+          },
+          {
+            "group": "API",
+            "pages": [
+              "errors",
+              "images"
+            ]
+          },
+          {
+            "group": "SDKs",
+            "pages": [
+              "sdks/openai",
+              "sdks/anthropic",
+              "sdks/gemini"
+            ]
+          },
+          {
+            "group": "Tools",
+            "pages": [
+              "tools/claude-code",
+              "tools/codex",
+              "tools/cursor",
+              "tools/cline",
+              "tools/opencode",
+              "tools/gemini-cli",
+              "tools/hermes-agent",
+              "tools/openclaw",
+              "tools/deepseek-harness",
+              "tools/cc-switch"
+            ]
+          }
+        ]
+      },
+      {
+        "language": "id",
+        "groups": [
+          {
+            "group": "Memulai",
+            "pages": [
+              "id/index",
+              "id/quickstart"
+            ]
+          },
+          {
+            "group": "Akun",
+            "pages": [
+              "id/authentication",
+              "id/api-keys",
+              "id/billing",
+              "id/models"
+            ]
+          },
+          {
+            "group": "API",
+            "pages": [
+              "id/errors",
+              "id/images"
+            ]
+          },
+          {
+            "group": "SDK",
+            "pages": [
+              "id/sdks/openai",
+              "id/sdks/anthropic",
+              "id/sdks/gemini"
+            ]
+          },
+          {
+            "group": "Tools",
+            "pages": [
+              "id/tools/claude-code",
+              "id/tools/codex",
+              "id/tools/cursor",
+              "id/tools/cline",
+              "id/tools/opencode",
+              "id/tools/gemini-cli",
+              "id/tools/hermes-agent",
+              "id/tools/openclaw",
+              "id/tools/deepseek-harness",
+              "id/tools/cc-switch"
+            ]
+          }
         ]
       }
     ],
     "global": {
       "anchors": [
         {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
+          "anchor": "Console",
+          "href": "https://router.triw.io"
         },
         {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
+          "anchor": "Status",
+          "href": "https://router.triw.io/api/status"
         }
       ]
     }
   },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
   "navbar": {
     "links": [
       {
-        "label": "Support",
-        "href": "mailto:support@mintlify.com"
+        "label": "Pricing",
+        "href": "https://router.triw.io/pricing"
       }
     ],
     "primary": {
       "type": "button",
-      "label": "Dashboard",
-      "href": "https://app.mintlify.com"
+      "label": "Get API key",
+      "href": "https://router.triw.io"
     }
   },
   "contextual": {
@@ -56,17 +150,14 @@
       "view",
       "chatgpt",
       "claude",
-      "perplexity",
       "mcp",
-      "cursor",
-      "vscode"
+      "cursor"
     ]
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "github": "https://github.com/triw-ai",
+      "website": "https://triw.io"
     }
   }
 }

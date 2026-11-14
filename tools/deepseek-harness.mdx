@@ -1,0 +1,48 @@
+---
+title: "DeepSeek Harness"
+description: "Run the dsh agent harness against Triw's OpenAI-compatible endpoint."
+---
+
+DeepSeek Harness (`dsh`) is a plugin-based agent harness. It works with any OpenAI-compatible provider, so Triw can serve it.
+
+## Install
+
+```bash
+npm install -g @deepseek-ai/dsh
+dsh --version
+```
+
+## Configure
+
+Point the harness at Triw with the OpenAI-compatible environment and a Triw model id:
+
+```bash
+export OPENAI_BASE_URL="https://router.triw.io/v1"
+export OPENAI_API_KEY="sk-..."     # Triw key
+export DSH_MODEL="claude-sonnet-4-5"
+dsh
+```
+
+If your installed profile uses a config file instead, the same three values apply — base URL, key, model:
+
+```json
+{
+  "provider": "openai-compatible",
+  "base_url": "https://router.triw.io/v1",
+  "api_key": "sk-...",
+  "model": "claude-sonnet-4-5"
+}
+```
+
+## Verify
+
+```bash
+dsh -p "reply with ready"
+```
+
+Then confirm the call in the Triw log. An empty log means the profile in use is still pointing at the official endpoint — check `dsh profile list` and the active profile's provider block.
+
+## Notes
+
+- Harness plugins may requery models at startup; if a model is missing, add it to the profile or pick one already listed by `GET /v1/models`.
+- Non-DeepSeek models work through Triw, but tool-call formatting quality varies by model — validate the agent loop before relying on it.

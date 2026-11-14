@@ -1,0 +1,71 @@
+---
+title: "API keys"
+description: "Create, scope, rotate and revoke keys — and what a group actually changes."
+---
+
+## Create a key
+
+**Dashboard → API Keys → Create key**
+
+| Field | Guidance |
+| --- | --- |
+| Name | Use something you can search later, e.g. `prod-backend`, `laptop-cursor` |
+| Group | Determines upstream pool + price multiplier. Pick the group your plan targets |
+| Quota | Cap for this key. Useful for client-facing apps and CI |
+| Expiry | Set for temporary access |
+| Model allow-list | Restrict a key to specific models; empty = group default |
+
+The secret is displayed once after creation and remains retrievable in the console. Treat both the console session and the secret as credentials.
+
+## What the group does
+
+A group is a routing and pricing profile configured by the operator. Two keys on the same account can use different groups and therefore see different models and different prices.
+
+- Available models per group: call `GET /v1/models` with that key.
+- Prices per group: the [pricing page](https://router.triw.io/pricing).
+- If a model returns `model_not_found`, the model exists but not for that key's group — this is the most common cause.
+
+## Quota on a key vs. balance on the account
+
+They are separate limits, both enforced:
+
+```
+request allowed  =  key.has_remaining_quota  AND  account.balance > 0
+```
+
+Setting `Quota` on a key never increases your balance. Setting it too low produces `insufficient_user_quota` even when the account still has credit.
+
+## Rotate and revoke
+
+1. Create a replacement key with the same group and limits.
+2. Deploy it to your app.
+3. Disable the old key in the console (or delete it).
+
+Disabling is instant for new requests. Requests already streaming complete normally.
+
+## Handling keys in code
+
+<CodeGroup>
+```bash Environment variables
+export TRIW_API_KEY="sk-..."
+```
+```python Python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["TRIW_API_KEY"],
+    base_url="https://router.triw.io/v1",
+)
+```
+```javascript Node.js
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.TRIW_API_KEY,
+  baseURL: "https://router.triw.io/v1",
+});
+```
+</CodeGroup>
+
+Never ship a key in a frontend bundle. For browser clients, proxy through your backend and keep the key server-side.

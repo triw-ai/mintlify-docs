@@ -1,0 +1,73 @@
+---
+title: "Image generation"
+description: "Generate and edit images through the OpenAI-compatible image endpoints."
+---
+
+Triw relays image models through the OpenAI images API, so the same client code that works with OpenAI works here.
+
+## Generate an image
+
+```bash
+curl https://router.triw.io/v1/images/generations \
+  -H "Authorization: Bearer $TRIW_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-image-1",
+    "prompt": "A matte black mechanical keyboard on a walnut desk, soft window light, 50mm photo",
+    "size": "1024x1024",
+    "n": 1
+  }'
+```
+
+Response follows OpenAI: base64 (default for `gpt-image-*`) or a hosted URL, depending on the model and the `response_format` you pass.
+
+```python
+from openai import OpenAI
+import base64, pathlib
+
+client = OpenAI(api_key="sk-...", base_url="https://router.triw.io/v1")
+
+r = client.images.generate(
+    model="gpt-image-1",
+    prompt="Isometric illustration of an API gateway, muted palette",
+    size="1024x1024",
+)
+pathlib.Path("out.png").write_bytes(base64.b64decode(r.data[0].b64_json))
+```
+
+## Edit an image
+
+```bash
+curl https://router.triw.io/v1/images/edits \
+  -H "Authorization: Bearer $TRIW_API_KEY" \
+  -F "model=gpt-image-1" \
+  -F "image=@input.png" \
+  -F "prompt=Replace the background with a plain studio grey"
+```
+
+`/v1/images/variations` is not implemented by the upstream providers Triw relays; expect a not-implemented response.
+
+## Available image models
+
+Ask the gateway, not the docs — availability is per group:
+
+```bash
+curl https://router.triw.io/v1/models -H "Authorization: Bearer $TRIW_API_KEY" | grep -i image
+```
+
+Common identifiers include `gpt-image-1`, `dall-e-3`, `dall-e-2`, and `flux-*` families when those channels are connected.
+
+## Parameters that matter
+
+| Parameter | Notes |
+| --- | --- |
+| `size` | Must be supported by the model — `1024x1024`, `1024x1536`, `1536x1024` for `gpt-image-*`; `1024x1024`, `1792x1024`, `1024x1792` for `dall-e-3` |
+| `n` | Some models only return 1 image per call |
+| `quality` | `low` / `medium` / `high` for `gpt-image-*`; `standard` / `hd` for `dall-e-3` |
+| `response_format` | `url` or `b64_json`; unsupported values are rejected upstream |
+
+## Practical notes
+
+- Image calls are slow (10–60s). Set client timeouts above 120s; do not retry on timeout without de-duplicating, or you may pay twice.
+- Prompts are forwarded verbatim. Provider-side moderation applies — a rejected prompt returns `invalid_request_error` with the provider's reason.
+- Billing is per image (plus tokens for `gpt-image-*` revisions), so check the price for the specific model before generating batches.

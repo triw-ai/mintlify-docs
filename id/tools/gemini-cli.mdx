@@ -1,0 +1,37 @@
+---
+title: "Gemini CLI"
+description: "Merutekan Gemini CLI lewat Triw dengan override base URL."
+---
+
+Gemini CLI secara default menghubungi `generativelanguage.googleapis.com`. Triw menyediakan permukaan `/v1beta` yang sama, jadi override base URL sudah cukup.
+
+## Konfigurasi
+
+```bash
+export GEMINI_API_KEY="sk-..."
+export GOOGLE_GEMINI_BASE_URL="https://router.triw.io"
+gemini
+```
+
+Build terbaru juga membaca dari `~/.gemini/settings.json`:
+
+```json ~/.gemini/settings.json
+{
+  "apiKey": "sk-...",
+  "baseUrl": "https://router.triw.io"
+}
+```
+
+## Verifikasi
+
+```bash
+gemini -m gemini-2.5-flash -p "bilang ready"
+```
+
+Lalu pastikan request muncul di **Dashboard → Logs**. Kalau kosong, environment variable tidak terbaca oleh proses yang menjalankan `gemini` — export di shell yang sama, atau simpan di `settings.json`.
+
+## Catatan
+
+- Gunakan host tanpa path. CLI menambahkan `/v1beta/models/...` sendiri.
+- Hanya id `gemini-*` yang relevan untuk CLI ini; model lain diakses lewat route kompatibel OpenAI.
+- `GOOGLE_API_KEY` bisa diprioritaskan pada sebagian versi — hapus bila trafik masih ke Google.

@@ -1,0 +1,73 @@
+---
+title: "Image generation"
+description: "Membuat dan mengedit gambar lewat endpoint image yang kompatibel dengan OpenAI."
+---
+
+Triw meneruskan model image melalui API images OpenAI, jadi kode klien yang sudah jalan dengan OpenAI juga jalan di sini.
+
+## Membuat gambar
+
+```bash
+curl https://router.triw.io/v1/images/generations \
+  -H "Authorization: Bearer $TRIW_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-image-1",
+    "prompt": "Keyboard mekanik hitam doff di meja kayu walnut, cahaya jendela lembut, foto 50mm",
+    "size": "1024x1024",
+    "n": 1
+  }'
+```
+
+Response mengikuti OpenAI: base64 (default untuk `gpt-image-*`) atau URL, tergantung model dan `response_format` yang Anda kirim.
+
+```python
+from openai import OpenAI
+import base64, pathlib
+
+client = OpenAI(api_key="sk-...", base_url="https://router.triw.io/v1")
+
+r = client.images.generate(
+    model="gpt-image-1",
+    prompt="Ilustrasi isometrik sebuah API gateway, palet warna tenang",
+    size="1024x1024",
+)
+pathlib.Path("out.png").write_bytes(base64.b64decode(r.data[0].b64_json))
+```
+
+## Mengedit gambar
+
+```bash
+curl https://router.triw.io/v1/images/edits \
+  -H "Authorization: Bearer $TRIW_API_KEY" \
+  -F "model=gpt-image-1" \
+  -F "image=@input.png" \
+  -F "prompt=Ganti latar menjadi abu-abu studio polos"
+```
+
+`/v1/images/variations` tidak diimplementasikan oleh provider yang diteruskan Triw; response-nya "not implemented".
+
+## Model image yang tersedia
+
+Tanyakan ke gateway, bukan ke dokumentasi — ketersediaan tergantung grup:
+
+```bash
+curl https://router.triw.io/v1/models -H "Authorization: Bearer $TRIW_API_KEY" | grep -i image
+```
+
+Identifier umum: `gpt-image-1`, `dall-e-3`, `dall-e-2`, dan keluarga `flux-*` bila channel-nya terpasang.
+
+## Parameter yang penting
+
+| Parameter | Catatan |
+| --- | --- |
+| `size` | Harus didukung model — `1024x1024`, `1024x1536`, `1536x1024` untuk `gpt-image-*`; `1024x1024`, `1792x1024`, `1024x1792` untuk `dall-e-3` |
+| `n` | Sebagian model hanya mengembalikan 1 gambar per panggilan |
+| `quality` | `low` / `medium` / `high` untuk `gpt-image-*`; `standard` / `hd` untuk `dall-e-3` |
+| `response_format` | `url` atau `b64_json`; nilai lain ditolak upstream |
+
+## Catatan praktis
+
+- Panggilan image lambat (10–60 detik). Set timeout klien di atas 120 detik; jangan retry saat timeout tanpa de-duplikasi agar tidak tertagih dua kali.
+- Prompt diteruskan apa adanya. Moderasi sisi provider tetap berlaku — prompt yang ditolak menghasilkan `invalid_request_error` dengan alasan dari provider.
+- Penagihan per gambar (plus token untuk revisi `gpt-image-*`), jadi cek harga model tersebut sebelum generate massal.

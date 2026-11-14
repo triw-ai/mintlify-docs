@@ -1,0 +1,39 @@
+---
+title: "Hermes Agent"
+description: "Register Triw as a custom OpenAI-compatible provider in Hermes Agent."
+---
+
+Hermes Agent (Nous Research) accepts custom providers. Triw becomes one entry in its config, after which any Triw model is selectable like a built-in one.
+
+## Configure
+
+Add a provider block to the Hermes config (`config.yaml` in the Hermes profile directory):
+
+```yaml config.yaml
+provider: custom
+custom_providers:
+  - name: triw
+    base_url: https://router.triw.io/v1
+    api_key: ${TRIW_API_KEY}
+    model: claude-sonnet-4-5
+```
+
+```bash
+export TRIW_API_KEY="sk-..."
+```
+
+Exact key names follow the Hermes provider schema; the values are always: base URL `https://router.triw.io/v1` and a Triw `sk-` key.
+
+## Verify
+
+```bash
+hermes "reply with ok"
+```
+
+Then check the Triw log for the request. A `401` means the environment variable did not reach Hermes — export it in the shell that launches the agent, or write the key directly in the config file.
+
+## Notes
+
+- Keep `base_url` at `/v1`; the agent appends the concrete endpoint.
+- If you run multiple agents, give each its own Triw key so usage is attributable in the console.
+- Model ids with a provider prefix are not needed — send the bare id from `GET /v1/models`.

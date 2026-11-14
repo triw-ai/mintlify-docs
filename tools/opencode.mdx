@@ -1,0 +1,52 @@
+---
+title: "OpenCode"
+description: "Add Triw as an OpenAI-compatible provider in opencode.json."
+---
+
+OpenCode reads providers from `opencode.json` (project) or `~/.config/opencode/opencode.json` (global). Register Triw once, then select models per session.
+
+## Configure
+
+```json ~/.config/opencode/opencode.json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "triw": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Triw",
+      "options": {
+        "baseURL": "https://router.triw.io/v1",
+        "apiKey": "{env:TRIW_API_KEY}"
+      },
+      "models": {
+        "claude-sonnet-4-5": { "name": "Claude Sonnet 4.5" },
+        "gpt-4o-mini": { "name": "GPT-4o mini" }
+      }
+    }
+  }
+}
+```
+
+```bash
+export TRIW_API_KEY="sk-..."
+opencode
+```
+
+`{env:TRIW_API_KEY}` keeps the secret out of the file. Literal keys also work but are easy to leak into a repo.
+
+## Selecting a model
+
+```bash
+opencode --model triw/claude-sonnet-4-5
+```
+
+Or pick it interactively with the model switcher (`/models` inside the TUI).
+
+## Verify
+
+Run a prompt that must call a tool, e.g. "list files in this directory". A text-only answer on a model without tool support is a model problem, not a config problem — the HTTP call already succeeded.
+
+## Notes
+
+- Only models listed under `provider.triw.models` appear in the picker; add the ones you actually use.
+- The npm package name matters: `@ai-sdk/openai-compatible` is the correct one for a generic OpenAI-compatible endpoint.

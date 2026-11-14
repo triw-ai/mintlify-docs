@@ -1,0 +1,65 @@
+---
+title: "Errors and troubleshooting"
+description: "Error envelope, code table, and the fixes that actually resolve each one."
+---
+
+## Error envelope
+
+Chat, embedding, image and audio endpoints return OpenAI-shaped errors:
+
+```json
+{
+  "error": {
+    "message": "insufficient user quota",
+    "type": "new_api_error",
+    "code": "insufficient_user_quota"
+  }
+}
+```
+
+Read `code` in code paths, `message` in logs. Messages can change; codes are stable.
+
+## Codes
+
+| `code` | HTTP | Meaning | Fix |
+| --- | --- | --- | --- |
+| `invalid_api_key` | 401 | Missing, malformed or unknown key | Send `Authorization: Bearer sk-...`; confirm the key is not disabled |
+| `insufficient_user_quota` | 403 | Account balance exhausted, or the key's own quota hit | Top up, or raise/clear the key's quota |
+| `insufficient_quota` | 429 | Upstream provider reports its own quota exhausted | Retry later or route to another model |
+| `model_not_found` | 404 | Model not available to this key's group | Check `GET /v1/models` with the same key |
+| `rate_limit` | 429 | Too many requests for the key or upstream channel | Back off; use exponential retry |
+| `channel_error` | 502 | Upstream channel failed, disabled or timed out | Retry; if it persists, report the model and time |
+| `invalid_request_error` | 400 | Body rejected before reaching upstream | Validate JSON, required fields, parameter names |
+
+## Troubleshooting by symptom
+
+### `401 invalid_api_key` but the key looks right
+
+1. No whitespace or quotes around the key in the env var.
+2. Header is `Authorization: Bearer <key>` — not `x-api-key` on OpenAI routes.
+3. Key belongs to the same Triw deployment (base URL `https://router.triw.io`).
+4. Key is not disabled and not expired (console shows both).
+
+### Requests succeed on curl but fail in the SDK
+
+Most often a duplicated path: SDKs append `/chat/completions` to the base URL, so the base must be `https://router.triw.io/v1` and never `/v1/chat/completions`.
+
+### `model_not_found` for a model you can see on the pricing page
+
+Pricing lists models across all groups. Your key's group is narrower. Create a key in the right group or ask the operator to enable the model for your group.
+
+### Streaming stops mid-answer
+
+Networks and proxies buffer responses. If you sit behind your own reverse proxy, disable response buffering for `/v1/*` and raise read timeouts above 300s. Triw itself streams until the upstream finishes.
+
+### Long requests fail with 5xx
+
+Reasoning models can hold the connection for minutes. Set client timeouts to at least 600s for those models, and prefer streaming so the connection stays active.
+
+### Sudden spike in `channel_error`
+
+Usually one upstream channel is unhealthy. Retry with backoff; if the same model fails for more than a few minutes, switch model or report it.
+
+## Reporting an issue
+
+Include: timestamp with timezone, model name, the `code` from the error body, and the request id returned in the response headers when present. That maps directly to a log entry.

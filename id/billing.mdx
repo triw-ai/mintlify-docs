@@ -1,0 +1,48 @@
+---
+title: "Saldo dan top-up"
+description: "Cara kuota diukur, bagaimana saldo masuk, dan cara membaca pemakaian."
+---
+
+## Cara penagihan bekerja
+
+Triw menghitung setiap request dari laporan pemakaian provider (token prompt, token completion, token cache, jumlah gambar, durasi audio — tergantung model). Biayanya dikonversi ke **kuota**:
+
+```
+500.000 kuota = $1,00
+```
+
+Jadi `1 kuota = $0,000002`. Dashboard menampilkan kuota sekaligus nilai USD-nya.
+
+Harga per model tertera di [halaman pricing](https://router.triw.io/pricing). Harga dinyatakan sebagai pengali atas harga dasar kelas model, sehingga request yang sama bisa berbeda biaya antar grup.
+
+## Cek saldo
+
+- Console: **Dashboard → Overview** (saldo, pemakaian hari ini, tren).
+- API: `GET /api/user/self` dengan token sesi, atau `GET /api/user/dashboard` untuk data agregat.
+
+## Top-up
+
+**Dashboard → Top up** menampilkan metode yang diaktifkan operator:
+
+| Metode | Alur |
+| --- | --- |
+| Payment gateway | Pilih nominal, bayar invoice, saldo masuk setelah provider mengonfirmasi |
+| Kode redeem | Tempel kode, saldo langsung bertambah |
+| Langganan / paket | Bila aktif, jatah berkala alih-alih bayar per token |
+
+<Warning>
+Invoice hanya dikreditkan setelah payment provider mengonfirmasi transaksi. Kalau sudah bayar tapi saldo belum berubah, tunggu callback provider lalu refresh. Masih kosong setelah 15 menit — buka tiket dengan menyertakan ID invoice.
+</Warning>
+
+## Membaca pemakaian
+
+Setiap request menulis satu entri log: model, token, kuota terpakai, latensi, status. Gunakan **Dashboard → Logs** untuk memfilter per key, model, atau rentang waktu. Log adalah acuan saat merekonsiliasi pengeluaran.
+
+## Penyebab tagihan yang membingungkan
+
+| Gejala | Penyebab |
+| --- | --- |
+| Saldo turun lebih cepat dari perkiraan | Konteks panjang atau `max_tokens` besar; token output lebih mahal daripada input |
+| `insufficient_user_quota` padahal saldo ada | Yang mentok adalah **kuota key**, bukan saldo akun |
+| Dua key, biaya beda untuk prompt sama | Grup berbeda → pengali berbeda |
+| Streaming terasa lebih mahal dari jawaban yang terlihat | Pemakaian mencakup token reasoning dan konteks cache bila provider melaporkannya |
