@@ -1,0 +1,84 @@
+---
+title: "Endpoint"
+description: "Daftar route yang diteruskan Triw beserta protokol masing-masing."
+---
+
+Semua route dilayani dari `https://router.triw.io`. Autentikasi memakai key Triw di `Authorization: Bearer sk-...`, kecuali route yang menyebutkan lain.
+
+## Kompatibel OpenAI
+
+| Method | Path | Fungsi |
+| --- | --- | --- |
+| `POST` | `/v1/chat/completions` | Chat, streaming, tool calling |
+| `POST` | `/v1/completions` | Completion teks (legacy) |
+| `POST` | `/v1/responses` | Bentuk Responses API |
+| `POST` | `/v1/embeddings` | Embedding teks |
+| `GET` | `/v1/models` | Model yang tersedia untuk grup key ini |
+| `POST` | `/v1/images/generations` | Teks ke gambar |
+| `POST` | `/v1/images/edits` | Edit gambar |
+| `POST` | `/v1/audio/speech` | Teks ke suara |
+| `POST` | `/v1/audio/transcriptions` | Suara ke teks |
+| `POST` | `/v1/audio/translations` | Terjemahan suara |
+| `POST` | `/v1/moderations` | Klasifikasi moderasi |
+| `POST` | `/v1/rerank` | Reranking |
+| `GET`/`POST` | `/v1/files` | Unggah dan daftar file |
+| `GET`/`POST` | `/v1/fine-tunes` | Job fine-tune |
+| `WS` | `/v1/realtime` | Sesi realtime |
+
+`POST /v1/images/variations` terdaftar tetapi membalas "not implemented" — provider yang diteruskan Triw tidak menyediakannya.
+
+## Kompatibel Anthropic
+
+| Method | Path | Fungsi |
+| --- | --- | --- |
+| `POST` | `/v1/messages` | Messages API, streaming, tool use |
+| `POST` | `/v1/messages/count_tokens` | Hitung token |
+
+`x-api-key: sk-...` diterima di route ini selain `Authorization`.
+
+## Kompatibel Gemini
+
+| Method | Path | Fungsi |
+| --- | --- | --- |
+| `POST` | `/v1beta/models/{model}:generateContent` | Generate content |
+| `POST` | `/v1beta/models/{model}:streamGenerateContent` | Versi streaming (`?alt=sse`) |
+| `GET` | `/v1beta/openai/models` | Daftar model gaya Gemini |
+
+`x-goog-api-key: sk-...` diterima di sini.
+
+## Midjourney task API
+
+| Method | Path | Fungsi |
+| --- | --- | --- |
+| `POST` | `/mj/submit/imagine` | Kirim job imagine |
+| `POST` | `/mj/submit/action` | Upscale / variasi |
+| `POST` | `/mj/submit/blend` | Gabung dua gambar |
+| `POST` | `/mj/submit/describe` | Deskripsi gambar |
+| `POST` | `/mj/submit/change` | Ubah parameter job |
+| `GET` | `/mj/task/{id}/fetch` | Poll hasil task |
+
+Midjourney berbasis task: submit mengembalikan id, lalu Anda polling sampai selesai. Ketersediaannya tergantung channel Midjourney yang dipasang operator.
+
+## Console API
+
+Dashboard adalah klien gateway ini; route berikut memakai sesi login dan bukan untuk integrasi pihak ketiga:
+
+| Method | Path | Fungsi |
+| --- | --- | --- |
+| `GET` | `/api/status` | Payload status publik (tanpa auth) |
+| `POST` | `/api/user/login` | Sesi console |
+| `GET` | `/api/user/self` | Akun saat ini |
+| `GET` | `/api/token/` | Daftar API key |
+| `POST` | `/api/user/topup` | Tukar kode |
+
+Gunakan `/v1/*` untuk trafik aplikasi. Permukaan `/api/*` berubah mengikuti produk dan tidak dijamin stabil.
+
+## Memilih protokol
+
+| Stack Anda | Pakai | Base URL |
+| --- | --- | --- |
+| SDK OpenAI, LangChain, sebagian besar tool | `/v1/chat/completions` | `https://router.triw.io/v1` |
+| SDK Anthropic, Claude Code | `/v1/messages` | `https://router.triw.io` |
+| Google Gen AI SDK, Gemini CLI | `/v1beta/...` | `https://router.triw.io` |
+
+Satu key berlaku untuk ketiganya. Detail header ada di [Autentikasi](/id/authentication), kode error di [Error](/id/errors).

@@ -1,0 +1,77 @@
+---
+title: "Embedding dan audio"
+description: "Embedding vektor, speech-to-text, text-to-speech, dan terjemahan lewat route kompatibel OpenAI."
+---
+
+Permukaan ini memakai format OpenAI, jadi SDK resmi bekerja hanya dengan mengganti base URL.
+
+## Embedding
+
+```bash
+curl https://router.triw.io/v1/embeddings \
+  -H "Authorization: Bearer $TRIW_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"text-embedding-3-small","input":["chunk pertama","chunk kedua"]}'
+```
+
+```python
+from openai import OpenAI
+c = OpenAI(api_key="sk-...", base_url="https://router.triw.io/v1")
+r = c.embeddings.create(model="text-embedding-3-small", input=["chunk pertama", "chunk kedua"])
+print(len(r.data[0].embedding))
+```
+
+| Parameter | Catatan |
+| --- | --- |
+| `input` | String atau array string; ukuran batch tergantung model |
+| `dimensions` | Didukung model yang mengizinkan pemotongan (mis. `text-embedding-3-*`) |
+| `encoding_format` | `float` (default) atau `base64` |
+
+Simpan id model bersama vektornya. Embedding dari model berbeda tidak bisa dibandingkan, dan mengganti model berarti harus membangun ulang indeks.
+
+## Speech to text
+
+```bash
+curl https://router.triw.io/v1/audio/transcriptions \
+  -H "Authorization: Bearer $TRIW_API_KEY" \
+  -F "model=whisper-1" \
+  -F "file=@rapat.m4a" \
+  -F "response_format=verbose_json"
+```
+
+`response_format` menerima `json`, `text`, `srt`, `vtt`, atau `verbose_json`. Pakai `verbose_json` bila butuh timestamp per segmen. Untuk menerjemahkan ke bahasa Inggris dari bahasa lain, gunakan `/v1/audio/translations` dengan parameter yang sama.
+
+## Text to speech
+
+```bash
+curl https://router.triw.io/v1/audio/speech \
+  -H "Authorization: Bearer $TRIW_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"tts-1","voice":"alloy","input":"Saldo Anda sepuluh dolar."}' \
+  --output speech.mp3
+```
+
+Response-nya byte audio, bukan JSON — tulis langsung ke file atau stream ke klien. Nilai `voice` dan format yang tersedia tergantung model.
+
+## Memilih model
+
+```bash
+curl https://router.triw.io/v1/models -H "Authorization: Bearer $TRIW_API_KEY"
+```
+
+Id embedding dan audio muncul di daftar yang sama dengan model chat. Bila id tidak ada, channel-nya belum diaktifkan untuk grup key Anda.
+
+## Catatan penagihan
+
+- Embedding ditagih per token input; dokumen panjang adalah biaya utama, jadi chunk dulu sebelum dikirim.
+- Transkripsi ditagih per menit audio; TTS per karakter input. Cek harga model sebelum job batch.
+- Request yang gagal sebelum mencapai upstream tidak ditagih.
+
+## Troubleshooting
+
+| Gejala | Penyebab | Perbaikan |
+| --- | --- | --- |
+| `400` pada embedding | `input` kosong atau terlalu besar untuk model | Kirim dalam array lebih kecil |
+| `415` pada transkripsi | Content type salah | Kirim multipart form (`-F`), bukan JSON |
+| File audio berisi JSON error | Request gagal; body-nya payload error | Periksa beberapa byte pertama file |
+| Transkrip kosong/terpotong | File melebihi batas durasi model | Pecah audionya |

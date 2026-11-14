@@ -1,0 +1,77 @@
+---
+title: "Embeddings and audio"
+description: "Vector embeddings, speech-to-text, text-to-speech and translation through the OpenAI-compatible routes."
+---
+
+These surfaces use the OpenAI wire format, so the official SDKs work by changing only the base URL.
+
+## Embeddings
+
+```bash
+curl https://router.triw.io/v1/embeddings \
+  -H "Authorization: Bearer $TRIW_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"text-embedding-3-small","input":["first chunk","second chunk"]}'
+```
+
+```python
+from openai import OpenAI
+c = OpenAI(api_key="sk-...", base_url="https://router.triw.io/v1")
+r = c.embeddings.create(model="text-embedding-3-small", input=["first chunk", "second chunk"])
+print(len(r.data[0].embedding))
+```
+
+| Parameter | Note |
+| --- | --- |
+| `input` | String or array of strings; batch sizes are model dependent |
+| `dimensions` | Supported by models that allow truncation (e.g. `text-embedding-3-*`) |
+| `encoding_format` | `float` (default) or `base64` |
+
+Store the model id with the vectors. Embeddings from different models are not comparable, and swapping models later requires re-indexing.
+
+## Speech to text
+
+```bash
+curl https://router.triw.io/v1/audio/transcriptions \
+  -H "Authorization: Bearer $TRIW_API_KEY" \
+  -F "model=whisper-1" \
+  -F "file=@meeting.m4a" \
+  -F "response_format=verbose_json"
+```
+
+`response_format` accepts `json`, `text`, `srt`, `vtt`, or `verbose_json`. Use `verbose_json` when you need segment timestamps. For translation into English from another language, use `/v1/audio/translations` with the same parameters.
+
+## Text to speech
+
+```bash
+curl https://router.triw.io/v1/audio/speech \
+  -H "Authorization: Bearer $TRIW_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"tts-1","voice":"alloy","input":"Your balance is ten dollars."}' \
+  --output speech.mp3
+```
+
+The response body is audio bytes, not JSON — write it straight to a file or stream it to the client. `voice` values and available formats depend on the model.
+
+## Choosing models
+
+```bash
+curl https://router.triw.io/v1/models -H "Authorization: Bearer $TRIW_API_KEY"
+```
+
+Embedding and audio ids appear in the same list as chat models. If an id is missing, that channel is not enabled for your key's group.
+
+## Billing notes
+
+- Embeddings bill per input token; long documents are the main cost driver, so chunk before sending.
+- Transcriptions bill per audio minute; TTS bills per input character. Check the model price before batch jobs.
+- Failed requests that never reached the upstream are not billed.
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| `400` on embeddings | `input` empty or too large for the model | Batch into smaller arrays |
+| `415` on transcription | Wrong content type | Send multipart form data (`-F`), not JSON |
+| Audio file is JSON with an error | Request failed; body was the error payload | Check the file's first bytes |
+| Empty or truncated transcript | File exceeds the model's duration limit | Split the audio |

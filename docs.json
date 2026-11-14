@@ -4,9 +4,9 @@
   "name": "Triw",
   "description": "Unified AI API gateway: one key, one base URL, any model.",
   "colors": {
-    "primary": "#5B8CFF",
-    "light": "#5B8CFF",
-    "dark": "#8F6BFF"
+    "primary": "#49785B",
+    "light": "#58946D",
+    "dark": "#326145"
   },
   "favicon": "/favicon.png",
   "logo": {
@@ -37,8 +37,10 @@
           {
             "group": "API",
             "pages": [
+              "endpoints",
               "errors",
-              "images"
+              "images",
+              "embeddings-audio"
             ]
           },
           {
@@ -88,8 +90,10 @@
           {
             "group": "API",
             "pages": [
+              "id/endpoints",
               "id/errors",
-              "id/images"
+              "id/images",
+              "id/embeddings-audio"
             ]
           },
           {
@@ -125,8 +129,8 @@
           "href": "https://router.triw.io"
         },
         {
-          "anchor": "Status",
-          "href": "https://router.triw.io/api/status"
+          "anchor": "Pricing",
+          "href": "https://router.triw.io/pricing"
         }
       ]
     }

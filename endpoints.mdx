@@ -1,0 +1,84 @@
+---
+title: "Endpoints"
+description: "Every route Triw relays, with the protocol each one speaks."
+---
+
+All routes are served from `https://router.triw.io`. Authentication is a Triw key in `Authorization: Bearer sk-...` unless a route states otherwise.
+
+## OpenAI-compatible
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `POST` | `/v1/chat/completions` | Chat, streaming, tool calling |
+| `POST` | `/v1/completions` | Legacy text completion |
+| `POST` | `/v1/responses` | Responses API shape |
+| `POST` | `/v1/embeddings` | Text embeddings |
+| `GET` | `/v1/models` | Models available to this key's group |
+| `POST` | `/v1/images/generations` | Text to image |
+| `POST` | `/v1/images/edits` | Image edit |
+| `POST` | `/v1/audio/speech` | Text to speech |
+| `POST` | `/v1/audio/transcriptions` | Speech to text |
+| `POST` | `/v1/audio/translations` | Speech translation |
+| `POST` | `/v1/moderations` | Moderation classification |
+| `POST` | `/v1/rerank` | Reranking |
+| `GET`/`POST` | `/v1/files` | File upload and listing |
+| `GET`/`POST` | `/v1/fine-tunes` | Fine-tune jobs |
+| `WS` | `/v1/realtime` | Realtime session |
+
+`POST /v1/images/variations` is registered but replies as not implemented — the upstream providers Triw relays do not expose it.
+
+## Anthropic-compatible
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `POST` | `/v1/messages` | Messages API, streaming, tool use |
+| `POST` | `/v1/messages/count_tokens` | Token counting |
+
+`x-api-key: sk-...` is accepted on these routes as well as `Authorization`.
+
+## Gemini-compatible
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `POST` | `/v1beta/models/{model}:generateContent` | Generate content |
+| `POST` | `/v1beta/models/{model}:streamGenerateContent` | Streaming variant (`?alt=sse`) |
+| `GET` | `/v1beta/openai/models` | Gemini-style model listing |
+
+`x-goog-api-key: sk-...` is accepted here.
+
+## Midjourney task API
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `POST` | `/mj/submit/imagine` | Submit an imagine job |
+| `POST` | `/mj/submit/action` | Upscale / variation actions |
+| `POST` | `/mj/submit/blend` | Blend two images |
+| `POST` | `/mj/submit/describe` | Describe an image |
+| `POST` | `/mj/submit/change` | Change job parameters |
+| `GET` | `/mj/task/{id}/fetch` | Poll task result |
+
+Midjourney is task-based: submit returns an id, then you poll until the task finishes. Availability depends on whether the operator connected a Midjourney channel.
+
+## Console API
+
+The dashboard itself is a client of the gateway; these routes are session-authenticated and are not for third-party integrations:
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/status` | Public status payload (no auth) |
+| `POST` | `/api/user/login` | Console session |
+| `GET` | `/api/user/self` | Current account |
+| `GET` | `/api/token/` | List API keys |
+| `POST` | `/api/user/topup` | Redeem a code |
+
+Use `/v1/*` for application traffic. The `/api/*` surface changes with the product and is not covered by stability guarantees.
+
+## Choosing a protocol
+
+| Your stack | Use | Base URL |
+| --- | --- | --- |
+| OpenAI SDK, LangChain, most tools | `/v1/chat/completions` | `https://router.triw.io/v1` |
+| Anthropic SDK, Claude Code | `/v1/messages` | `https://router.triw.io` |
+| Google Gen AI SDK, Gemini CLI | `/v1beta/...` | `https://router.triw.io` |
+
+One key works across all three. See [Authentication](/authentication) for header details and [Errors](/errors) for response codes.
