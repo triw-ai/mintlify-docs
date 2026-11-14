@@ -4,9 +4,9 @@
   "name": "Triw",
   "description": "Unified AI API gateway: one key, one base URL, any model.",
   "colors": {
-    "primary": "#49785B",
-    "light": "#58946D",
-    "dark": "#326145"
+    "primary": "#C05E3C",
+    "light": "#E08A63",
+    "dark": "#9E4A2C"
   },
   "favicon": "/favicon.png",
   "logo": {
@@ -40,6 +40,7 @@
               "endpoints",
               "errors",
               "images",
+              "video",
               "embeddings-audio"
             ]
           },
@@ -72,14 +73,14 @@
         "language": "id",
         "groups": [
           {
-            "group": "Memulai",
+            "group": "Getting started",
             "pages": [
               "id/index",
               "id/quickstart"
             ]
           },
           {
-            "group": "Akun",
+            "group": "Account",
             "pages": [
               "id/authentication",
               "id/api-keys",
@@ -93,11 +94,12 @@
               "id/endpoints",
               "id/errors",
               "id/images",
+              "id/video",
               "id/embeddings-audio"
             ]
           },
           {
-            "group": "SDK",
+            "group": "SDKs",
             "pages": [
               "id/sdks/openai",
               "id/sdks/anthropic",

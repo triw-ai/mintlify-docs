@@ -24,6 +24,9 @@ Semua route dilayani dari `https://router.triw.io`. Autentikasi memakai key Triw
 | `GET`/`POST` | `/v1/files` | Unggah dan daftar file |
 | `GET`/`POST` | `/v1/fine-tunes` | Job fine-tune |
 | `WS` | `/v1/realtime` | Sesi realtime |
+| `POST` | `/v1/videos` | Membuat task video |
+| `GET` | `/v1/videos/{task_id}` | Polling task video |
+| `POST` | `/v1/videos/{task_id}/remix` | Jalankan ulang task video |
 
 `POST /v1/images/variations` terdaftar tetapi membalas "not implemented" — provider yang diteruskan Triw tidak menyediakannya.
 

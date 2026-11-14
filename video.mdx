@@ -1,0 +1,106 @@
+---
+title: "Video generation"
+description: "Submit a video task, then poll it until the asset is ready."
+---
+
+Video models are task-based. A request returns a task id immediately; the render happens upstream and you poll until it finishes. No long-lived HTTP connection is held open.
+
+## Submit a task
+
+```bash
+curl https://router.triw.io/v1/videos \
+  -H "Authorization: Bearer $TRIW_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "kling-v2",
+    "prompt": "A slow dolly shot through a rain-soaked alley at night, neon reflections",
+    "duration": 5,
+    "aspect_ratio": "16:9"
+  }'
+```
+
+The response is a task object:
+
+```json
+{
+  "id": "task_8f3c1a...",
+  "status": "queued"
+}
+```
+
+Keep `id`. It is the only handle for the job.
+
+## Poll for the result
+
+```bash
+curl https://router.triw.io/v1/videos/task_8f3c1a... \
+  -H "Authorization: Bearer $TRIW_API_KEY"
+```
+
+Poll every 5–15 seconds. Treat these `status` values as terminal: a finished state that carries the asset, or a failure state that carries a reason. Anything else means keep polling.
+
+```python
+import time, requests
+
+BASE = "https://router.triw.io"
+H = {"Authorization": f"Bearer {API_KEY}"}
+
+task = requests.post(f"{BASE}/v1/videos", headers=H, json={
+    "model": "kling-v2",
+    "prompt": "A paper boat drifting down a rainy gutter, macro shot",
+    "duration": 5,
+}).json()
+
+while True:
+    r = requests.get(f"{BASE}/v1/videos/{task['id']}", headers=H).json()
+    if r.get("status") in ("succeeded", "success", "failed", "error"):
+        print(r)
+        break
+    time.sleep(10)
+```
+
+## Image-to-video
+
+Pass a reference image alongside the prompt; the field name follows the model's own API (commonly `image`, `image_url`, or `input_reference`). Triw forwards unknown fields to the channel, so the provider's parameter names are the ones that work.
+
+```bash
+curl https://router.triw.io/v1/videos \
+  -H "Authorization: Bearer $TRIW_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "kling-v2",
+    "prompt": "slow push-in, dust particles in the light",
+    "image": "https://example.com/still.jpg",
+    "duration": 5
+  }'
+```
+
+## Other operations
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `POST` | `/v1/videos` | Create a task |
+| `GET` | `/v1/videos/{task_id}` | Task status / result |
+| `POST` | `/v1/videos/{task_id}/remix` | Re-run a task with changed parameters |
+
+Provider-native paths are also proxied when the matching plugin is enabled — for example Kling's `/v1/videos/text2video`, Alibaba's `/api/v1/services/aigc/video-generation/video-synthesis`, or Doubao's `/ent/v2/text2video`. Use those only if you already have code written against that provider's SDK.
+
+## Practical notes
+
+| Topic | Detail |
+| --- | --- |
+| Latency | Renders take 1–10 minutes depending on model, duration and resolution |
+| Idempotency | Create one task per user action; retrying the POST creates a second billable render |
+| Storage | Result URLs are provider-hosted and can expire — download the asset after success |
+| Pricing | Billed per task, scaling with duration and resolution; check the model price first |
+| Availability | Only models enabled for your key's group are callable; confirm with `GET /v1/models` |
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| `model_not_found` | Model absent from the key's group | Create a key in a group that includes video models |
+| `task_not_exist` | Wrong id, or task belongs to another account | Poll with the same key that submitted it |
+| `not_implemented` on fetch | Channel has no OpenAI-video converter | Read the task through the provider-native path instead |
+| Task stuck in progress | Upstream queue congested | Wait; if it exceeds 30 minutes, treat as failed and resubmit |
+| 400 on extra fields | Parameter not accepted by that model | Remove it and follow the provider's own parameter list |

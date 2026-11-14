@@ -1,0 +1,106 @@
+---
+title: "Video generation"
+description: "Kirim task video, lalu polling sampai asetnya siap."
+---
+
+Model video berbasis task. Request mengembalikan task id segera; render terjadi di upstream dan Anda polling sampai selesai. Tidak ada koneksi HTTP panjang yang ditahan.
+
+## Kirim task
+
+```bash
+curl https://router.triw.io/v1/videos \
+  -H "Authorization: Bearer $TRIW_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "kling-v2",
+    "prompt": "Dolly shot lambat di gang basah saat malam, pantulan neon",
+    "duration": 5,
+    "aspect_ratio": "16:9"
+  }'
+```
+
+Response berupa objek task:
+
+```json
+{
+  "id": "task_8f3c1a...",
+  "status": "queued"
+}
+```
+
+Simpan `id`. Itu satu-satunya pegangan untuk job tersebut.
+
+## Polling hasil
+
+```bash
+curl https://router.triw.io/v1/videos/task_8f3c1a... \
+  -H "Authorization: Bearer $TRIW_API_KEY"
+```
+
+Polling tiap 5–15 detik. Anggap `status` yang membawa aset sebagai selesai, dan status yang membawa alasan sebagai gagal. Selain itu berarti masih berjalan.
+
+```python
+import time, requests
+
+BASE = "https://router.triw.io"
+H = {"Authorization": f"Bearer {API_KEY}"}
+
+task = requests.post(f"{BASE}/v1/videos", headers=H, json={
+    "model": "kling-v2",
+    "prompt": "Perahu kertas hanyut di selokan saat hujan, makro",
+    "duration": 5,
+}).json()
+
+while True:
+    r = requests.get(f"{BASE}/v1/videos/{task['id']}", headers=H).json()
+    if r.get("status") in ("succeeded", "success", "failed", "error"):
+        print(r)
+        break
+    time.sleep(10)
+```
+
+## Image-to-video
+
+Sertakan gambar referensi bersama prompt; nama field mengikuti API model tersebut (umumnya `image`, `image_url`, atau `input_reference`). Triw meneruskan field yang tidak dikenalnya ke channel, jadi nama parameter milik provider yang berlaku.
+
+```bash
+curl https://router.triw.io/v1/videos \
+  -H "Authorization: Bearer $TRIW_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "kling-v2",
+    "prompt": "push-in lambat, partikel debu di cahaya",
+    "image": "https://example.com/still.jpg",
+    "duration": 5
+  }'
+```
+
+## Operasi lain
+
+| Method | Path | Fungsi |
+| --- | --- | --- |
+| `POST` | `/v1/videos` | Membuat task |
+| `GET` | `/v1/videos/{task_id}` | Status / hasil task |
+| `POST` | `/v1/videos/{task_id}/remix` | Jalankan ulang dengan parameter berbeda |
+
+Path native provider juga diproksikan bila plugin terkait aktif — misalnya `/v1/videos/text2video` milik Kling, `/api/v1/services/aigc/video-generation/video-synthesis` milik Alibaba, atau `/ent/v2/text2video` milik Doubao. Pakai itu hanya jika kode Anda memang sudah ditulis untuk SDK provider tersebut.
+
+## Catatan praktis
+
+| Topik | Detail |
+| --- | --- |
+| Latensi | Render 1–10 menit tergantung model, durasi, dan resolusi |
+| Idempotensi | Satu task per aksi pengguna; retry POST berarti render kedua yang tetap ditagih |
+| Penyimpanan | URL hasil di-host provider dan bisa kedaluwarsa — unduh asetnya setelah sukses |
+| Biaya | Ditagih per task, naik sesuai durasi dan resolusi; cek harga model lebih dulu |
+| Ketersediaan | Hanya model yang aktif untuk grup key Anda yang bisa dipanggil; pastikan lewat `GET /v1/models` |
+
+## Troubleshooting
+
+| Gejala | Penyebab | Perbaikan |
+| --- | --- | --- |
+| `model_not_found` | Model tidak ada di grup key | Buat key di grup yang memuat model video |
+| `task_not_exist` | Id salah, atau task milik akun lain | Polling dengan key yang sama seperti saat submit |
+| `not_implemented` saat fetch | Channel tidak punya converter video OpenAI | Baca task lewat path native provider |
+| Task tertahan di progress | Antrean upstream padat | Tunggu; bila lebih dari 30 menit, anggap gagal dan kirim ulang |
+| 400 pada field tambahan | Parameter tidak diterima model tersebut | Hapus dan ikuti daftar parameter provider |

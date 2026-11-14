@@ -24,6 +24,9 @@ All routes are served from `https://router.triw.io`. Authentication is a Triw ke
 | `GET`/`POST` | `/v1/files` | File upload and listing |
 | `GET`/`POST` | `/v1/fine-tunes` | Fine-tune jobs |
 | `WS` | `/v1/realtime` | Realtime session |
+| `POST` | `/v1/videos` | Create a video task |
+| `GET` | `/v1/videos/{task_id}` | Poll a video task |
+| `POST` | `/v1/videos/{task_id}/remix` | Re-run a video task |
 
 `POST /v1/images/variations` is registered but replies as not implemented — the upstream providers Triw relays do not expose it.
 
